@@ -1,0 +1,44 @@
+{
+  "workers": [
+    {
+      "name": "John",
+      "uptime": 120,
+      "casesPerHour": 150,
+      "attendance": 95,
+      "image": "https://rickandmortyapi.com/api/character/avatar/10.jpeg",
+      "id": 23
+    },
+    {
+      "name": "Jack",
+      "uptime": 125,
+      "casesPerHour": 140,
+      "attendance": 89,
+      "image": "https://rickandmortyapi.com/api/character/avatar/9.jpeg",
+      "id": 24
+    },
+    {
+      "name": "Jill",
+      "uptime": 95,
+      "casesPerHour": 120,
+      "attendance": 79,
+      "image": "https://rickandmortyapi.com/api/character/avatar/8.jpeg",
+      "id": 25
+    },
+    {
+      "name": "tim",
+      "uptime": 111,
+      "casesPerHour": 111,
+      "attendance": 111,
+      "image": "",
+      "id": 26
+    },
+    {
+      "name": "Sm",
+      "uptime": 123,
+      "casesPerHour": 123,
+      "attendance": 123,
+      "image": "",
+      "id": 27
+    }
+  ]
+}

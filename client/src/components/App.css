@@ -1,0 +1,16 @@
+/* You can place this in a global CSS or App.css file */
+.app-container {
+    display: flex;
+  }
+  
+  .navbar {
+    width: 20vw; /* or you can use a fixed pixel value, e.g., 200px */
+    height: 100vh; /* this will ensure the sidebar takes the full height */
+    overflow-y: auto; /* to add scroll if content overflows */
+  }
+  
+  .main-content {
+    flex-grow: 1;
+    padding-left: 20px; /* Optional: Add some spacing between the sidebar and main content */
+  }
+  
