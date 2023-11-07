@@ -9,12 +9,6 @@ from app import app
 # Create a Faker instance
 fake = Faker()
 
-# File extensions to consider as images
-IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png']
-
-def list_image_files(directory):
-    """List image files in the given directory."""
-    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and os.path.splitext(f)[1].lower() in IMAGE_EXTENSIONS]
 
 # Create an application context
 with app.app_context():
@@ -55,38 +49,45 @@ with app.app_context():
         "Receiver": ["Cases Per Hour", "Uptime", "Attendance"]
     }
 
-    # List image files
-    image_files = list_image_files('public/worker_image')
 
     associate_id_counter = 1  # Counter for associate IDs
 
     # Create 10 associates for each job class
+    # Create 10 associates for each job class
     for job_class in JobClass.query.all():
         for _ in range(10):
-            # Choose an image for the associate, reusing images if there are more associates than images
-            image_file = image_files[(associate_id_counter-1) % len(image_files)] if image_files else None
             associate = Associate(
                 dateofhire=datetime.now(),
                 first_name=fake.first_name(),
                 last_name=fake.last_name(),
                 department_id=1,
                 jobclass_id=job_class.id,
-                image_path=os.path.join('public', 'worker_image', image_file) if image_file else None
             )
             db.session.add(associate)
-            db.session.commit()
+            db.session.commit()  # Commit to ensure `associate.id` is set.
 
             # Assign appropriate metrics to associate based on job class
             job_class_metrics = metrics_map[job_class.name]
             for metric_name in job_class_metrics:
                 metric = Metric.query.filter_by(metricname=metric_name).first()
-                associate_metric = AssociateMetric(
-                    associate_id=associate_id_counter,
-                    metric_id=metric.id,
-                    metric_value=random.uniform(85.0, 100.0),
-                )
-                db.session.add(associate_metric)
-                db.session.commit()
+                # Check if the metric has already been assigned to this associate
+                existing_metric = AssociateMetric.query.filter_by(
+                    associate_id=associate.id,
+                    metric_id=metric.id
+                ).first()
+
+                # Only create a new AssociateMetric if it doesn't already exist
+                if not existing_metric:
+                    associate_metric = AssociateMetric(
+                        associate_id=associate.id,
+                        metric_id=metric.id,
+                        metric_value=random.uniform(85.0, 100.0),
+                    )
+                    db.session.add(associate_metric)
+
+            # Commit all metrics for the associate at once, outside the metrics loop.
+            db.session.commit()
+
 
             associate_id_counter += 1
 

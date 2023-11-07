@@ -12,9 +12,7 @@ class Associate(db.Model):
     jobclass_id = db.Column(db.Integer, db.ForeignKey('jobclasses.id'))
     department = db.relationship('Department', backref='associates')
     jobclass = db.relationship('JobClass', backref='associates')
-    metrics = db.relationship('Metric', secondary='associate_metrics', back_populates='associates')
-    associate_image = db.Column(db.BLOB)  # Column to store image data as binary
-    image_path = db.Column(db.String, nullable=True)
+    metrics = db.relationship('Metric', secondary='associate_metrics', back_populates='associates', overlaps="associate_metrics")
     schedules = db.relationship('Schedule', backref='associate')
 
 class Day(db.Model):
@@ -27,7 +25,7 @@ class Metric(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     metricname = db.Column(db.String(100))
     calculation = db.Column(db.String(255))
-    associates = db.relationship('Associate', secondary='associate_metrics', back_populates='metrics')
+    associates = db.relationship('Associate', secondary='associate_metrics', back_populates='metrics', overlaps="associate_metrics")
 
 class AssociateMetric(db.Model):
     __tablename__ = 'associate_metrics'
@@ -35,6 +33,7 @@ class AssociateMetric(db.Model):
     associate_id = db.Column(db.Integer, db.ForeignKey('associates.id'))
     metric_id = db.Column(db.Integer, db.ForeignKey('metrics.id'))
     metric_value = db.Column(db.Float)
+    metric = db.relationship('Metric', backref='associate_metrics', overlaps="associates,metrics")
 
 class Schedule(db.Model):
     __tablename__ = 'schedules'
