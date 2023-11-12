@@ -1,20 +1,19 @@
 import React from "react";
 import { NavLink } from "react-router-dom"
-import { Menu } from 'semantic-ui-react';
 
-const sidebarStyles = {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "start",  // Align links to the start of the container.
-    position: "fixed",   // Fix position so the sidebar stays put while scrolling.
-    left: 0,             // Position it on the left side.
-    top: 0,              // Start from the top.
-    height: "100vh",     // Full viewport height.
-    width: "200px",      // Width of the sidebar.
-    backgroundColor: "grey",
-    padding: "16px",
-    boxSizing: "border-box",
-}
+// const sidebarStyles = {
+//     display: "flex",
+//     flexDirection: "column",
+//     alignItems: "start",  // Align links to the start of the container.
+//     position: "fixed",   // Fix position so the sidebar stays put while scrolling.
+//     left: 0,             // Position it on the left side.
+//     top: 0,              // Start from the top.
+//     height: "100vh",     // Full viewport height.
+//     width: "200px",      // Width of the sidebar.
+//     backgroundColor: "grey",
+//     padding: "16px",
+//     boxSizing: "border-box",
+// }
 
 const linkStyles = {
     width: "100%",
@@ -28,7 +27,7 @@ const linkStyles = {
 
 function NavBar() {
     return (
-        <div className="navbar" style={sidebarStyles}>
+        <div>
             <NavLink style={linkStyles} to="/">Home</NavLink>
             <NavLink style={linkStyles} to="/employeeform">New Employee</NavLink>
             <NavLink style={linkStyles} to="/about">About</NavLink>

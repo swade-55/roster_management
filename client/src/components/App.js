@@ -15,7 +15,7 @@ function App() {
 
   useEffect(() => {
     console.log('in use effect');
-    fetch(`http://localhost:5555/selectors_metrics`)
+    fetch(`http://localhost:5555/associate_metrics`)
       .then((r) => r.json())
       .then((data) => dispatch(setWorkers(data)));
   }, [dispatch]);

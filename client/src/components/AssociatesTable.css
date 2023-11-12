@@ -1,0 +1,36 @@
+/* AssociatesTable.css */
+
+.associates-table-container {
+    margin: 20px;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+  }
+  
+  .ui.definition.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+  }
+  
+  .ui.definition.table thead tr {
+    background-color: #f2f2f2;
+  }
+  
+  .ui.definition.table th,
+  .ui.definition.table td {
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .ui.definition.table th {
+    background-color: #f4f4f4;
+    font-weight: 500;
+  }
+  
+  .ui.definition.table tbody tr:hover {
+    background-color: #f1f1f1;
+  }
+  

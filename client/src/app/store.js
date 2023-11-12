@@ -4,6 +4,7 @@ import workersReducer from '../features/workersSlice';
 import metricsReducer from '../features/metricsSlice'
 import searchReducer from '../features/searchSlice'
 import associatesReducer from '../features/associatesSlice';
+import schedulesReducer from '../features/schedulesSlice';
 
 const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ const store = configureStore({
     metrics:metricsReducer,
     search:searchReducer,
     associates: associatesReducer,
+    schedules: schedulesReducer,
   },
 });
 

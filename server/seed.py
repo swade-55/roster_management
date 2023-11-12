@@ -12,6 +12,14 @@ fake = Faker()
 
 # Create an application context
 with app.app_context():
+    db.session.query(Associate).delete()
+    db.session.query(Day).delete()
+    db.session.query(Metric).delete()
+    db.session.query(AssociateMetric).delete()
+    db.session.query(Schedule).delete()
+    db.session.query(Department).delete()
+    db.session.query(JobClass).delete()
+    
 
     # Create and commit Metric entries with actual values
     metrics_data = [

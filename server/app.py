@@ -62,7 +62,7 @@ def get_selectors_metrics():
         return jsonify({'error': str(e)})
     
     
-@app.route('/selectors_metrics/<int:associate_id>', methods=['DELETE'])
+@app.route('/associate_metrics/<int:associate_id>', methods=['DELETE'])
 def delete_associate(associate_id):
     try:
         # Get the session
@@ -226,6 +226,56 @@ def get_associate_metrics():
 
     except Exception as e:
         return jsonify({'error': str(e)})
+    
+    
+@app.route('/add_associate', methods=['POST'])
+def add_associate():
+    try:
+        # Parse the incoming JSON data
+        data = request.get_json()
+
+        # You may want to validate the data before processing it
+
+        # Check if the Associate already exists (assuming 'id' is sent for existing associates)
+        if 'id' in data:
+            associate = Associate.query.get(data['id'])
+            if not associate:
+                return jsonify({'error': 'Associate not found'}), 404
+        else:
+            # Create a new Associate if one does not exist
+            associate = Associate(
+                first_name=data['firstName'],
+                last_name=data['lastName'],
+                # ... other fields ...
+                jobclass_id=...  # Look up or create the JobClass based on data['jobClass']
+            )
+            db.session.add(associate)
+        
+        # Commit the associate to get its id for the AssociateMetric
+        db.session.commit()
+
+        # Now handle the metrics
+        for metric_name, value in [('uptime', data['uptime']), ('casesPerHour', data['casesPerHour']), ('attendance', data['attendance'])]:
+            metric = Metric.query.filter_by(metricname=metric_name).first()
+            if metric:
+                associate_metric = AssociateMetric.query.filter_by(associate_id=associate.id, metric_id=metric.id).first()
+                if not associate_metric:
+                    associate_metric = AssociateMetric(
+                        associate_id=associate.id,
+                        metric_id=metric.id,
+                        metric_value=value
+                    )
+                    db.session.add(associate_metric)
+                else:
+                    associate_metric.metric_value = value
+
+        db.session.commit()
+
+        return jsonify({'message': 'Associate added/updated successfully'}), 200
+
+    except Exception as e:
+        db.session.rollback()  # Rollback in case of error
+        return jsonify({'error': str(e)}), 500
 
 
 
