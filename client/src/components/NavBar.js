@@ -32,6 +32,7 @@ function NavBar() {
             <NavLink style={linkStyles} to="/employeeform">New Employee</NavLink>
             <NavLink style={linkStyles} to="/about">About</NavLink>
             <NavLink style={linkStyles} to="/associatetable">Associates Table</NavLink>
+            <NavLink style={linkStyles} to="/schedulebuilder">Schedule Builder</NavLink>
         </div>
     );
 }

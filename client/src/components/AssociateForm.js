@@ -1,124 +1,189 @@
-import React, { useState } from 'react';
-import { Form } from 'semantic-ui-react';
-import { useDispatch } from 'react-redux';
-import { addWorker } from '../features/workersSlice';
+import React,{useState} from 'react';
+import { Formik, Form, useField } from 'formik';
+import { useDispatch} from 'react-redux';
+import { addWorker,fetchWorkers } from '../features/workersSlice';
+import * as Yup from 'yup';
+
+
+
+
+// Define the MySelect component
+const MySelect = ({ label, ...props }) => {
+  const [field, meta] = useField(props);
+  return (
+    <>
+      <label htmlFor={props.id || props.name}>{label}</label>
+      <select {...field} {...props} />
+      {meta.touched && meta.error ? <div className="error">{meta.error}</div> : null}
+    </>
+  );
+};
+
+// Define the jobClasses array
+const jobClasses = [
+  { id: 1, name: 'Putaway Forklift' },
+  { id: 2, name: 'Selector' },
+  { id: 3, name: 'Loader' },
+  { id: 4, name: 'Receiver' },
+  { id: 5, name: 'Letdown Forklift' },
+  // ... other job classes ...
+];
+
+// Custom Input component for Formik
+const MyTextInput = ({ label, ...props }) => {
+  const [field] = useField(props);
+  return (
+    <>
+      <label htmlFor={props.id || props.name}>{label}</label>
+      <input {...field} {...props} />
+    </>
+  );
+};
 
 function AssociateForm() {
-  const [formData, setFormData] = useState({
+  const dispatch = useDispatch();
+  const [selectedJobClass,setSelectedJobClass] = useState('')
+  const validationSchema = Yup.object({
+    firstName: Yup.string().required('First name is required'),
+    lastName: Yup.string().required('Last name is required'),
+    jobClass_id: Yup.string().required('Job class is required'),
+    uptime: Yup.string().required('Uptime is required'),
+    casesPerHour: Yup.string().required('Cases per hour is required'),
+    palletsPerHour: Yup.string().required('Pallets per hour is required'),
+    attendance: Yup.string().required('Attendance is required'),
+  });
+  
+
+  const handleJobClassChange = (setFieldValue,value) =>{
+    setFieldValue("jobClass_id",value);
+    setSelectedJobClass(value);
+  }
+
+  // Initial values for the form
+  const initialValues = {
     firstName: '',
     lastName: '',
-    uptime: '',
+    jobClass_id: '', 
+    uptime: '', 
     casesPerHour: '',
+    palletsPerHour: '',
     attendance: '',
-    jobClass: '',
-  });
+  };
+  
 
-  const dispatch = useDispatch();
+  // onSubmit function with Redux dispatch
+  const onSubmit = (values, { setSubmitting, resetForm }) => {
+    // Prepare the metrics object
+    const metrics = {
+      uptime: values.uptime,
+      casesPerHour: values.casesPerHour,
+      palletsPerHour: values.palletsPerHour,
+      attendance: values.attendance
+    };
 
-  function handleChange(event) {
-    setFormData({
-      ...formData,
-      [event.target.name]: event.target.value,
-    });
-  }
+    // Remove any empty metric entries
+    Object.keys(metrics).forEach(key => metrics[key] === '' && delete metrics[key]);
 
-  function handleSubmit(event) {
-    event.preventDefault();
-    dispatch(addWorker(formData)); // Dispatch the action to add a worker
-    // Reset formData after submission
-    setFormData({
-      firstName: '',
-      lastName: '',
-      uptime: '',
-      casesPerHour: '',
-      attendance: '',
-      jobClass: '',
-    });
-  }
+    // Create the payload to send to the server
+    const payload = {
+      firstName: values.firstName,
+      lastName: values.lastName,
+      jobClass_id: parseInt(values.jobClass_id, 10), 
+      metrics: metrics
+    };
+
+    console.log('Attempting to submit form with values:', payload);
+    
+    // Dispatching the action with form data
+    dispatch(addWorker(payload))
+      .unwrap()
+      .then(addedWorker => {
+        console.log('Form submission successful, added worker:', addedWorker);
+        dispatch(fetchWorkers())
+        resetForm();
+      })
+      .catch(error => {
+        console.error('Form submission error:', error);
+      })
+      .finally(() => {
+        setSubmitting(false);
+      });
+  };
 
   return (
     <div>
       <h3>Add an Associate!</h3>
-      <Form onSubmit={handleSubmit}>
-        <Form.Group className="field" widths="equal">
-          <Form.Select
-            fluid
-            label="Job Class"
-            options={[
-              { key: 'selector', value: 'Selector', text: 'Selector' },
-              { key: 'forklift', value: 'Forklift', text: 'Forklift' },
-              { key: 'receiver', value: 'Receiver', text: 'Receiver' },
-              { key: 'loader', value: 'Loader', text: 'Loader' },
-              // ... Add other job class options here ...
-            ]}
-            placeholder="Select a Job Class"
-            name="jobClass"
-            value={formData.jobClass}
-            onChange={(e, { value }) => setFormData({ ...formData, jobClass: value })}
-          />
+      <Formik
+        initialValues={initialValues}
+        validationSchema={validationSchema}
+        onSubmit={onSubmit}
+      >
+        {({ isSubmitting, setFieldValue, values }) => (
+          <Form>
+            <MySelect label="Job Class" name="jobClass_id" onChange={(e) => handleJobClassChange(setFieldValue, e.target.value)}>
+              <option value="">Select a Job Class</option>
+              {jobClasses.map(jobClass => (
+                <option key={jobClass.id} value={jobClass.id}> {/* Change this line */}
+                  {jobClass.name}
+                </option>
+              ))}
+            </MySelect>
 
-          {/* Conditional Rendering based on the job class */}
-          {['Selector', 'Forklift', 'Receiver', 'Loader'].includes(formData.jobClass) && (
-            <>
-              <Form.Input
-                fluid
-                label="First Name"
-                placeholder="First Name"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-              />
-              <Form.Input
-                fluid
-                label="Last Name"
-                placeholder="Last Name"
-                name="lastName"
-                value={formData.lastName}
-                onChange={handleChange}
-              />
-              <Form.Input
-                fluid
-                label="Uptime"
-                placeholder="Uptime"
-                name="uptime"
-                value={formData.uptime}
-                onChange={handleChange}
-              />
-              {/* The following field should be conditional based on the jobClass */}
-              {formData.jobClass === 'Selector' ? (
-                <Form.Input
-                  fluid
-                  label="Cases Per Hour"
-                  placeholder="Cases Per Hour"
-                  name="casesPerHour"
-                  value={formData.casesPerHour}
-                  onChange={handleChange}
-                />
-              ) : (
-                <Form.Input
-                  fluid
-                  label={formData.jobClass === 'Selector' ? "Cases Per Hour" : "Pallets Per Hour"}
-                  placeholder={formData.jobClass === 'Selector' ? "Cases Per Hour" : "Pallets Per Hour"}
-                  name={formData.jobClass === 'Selector' ? "casesPerHour" : "palletsPerHour"}
-                  value={formData.jobClass === 'Selector' ? formData.casesPerHour : formData.palletsPerHour}
-                  onChange={handleChange}
-                />
-              )}
-              <Form.Input
-                fluid
-                label="Attendance"
-                placeholder="Attendance"
-                name="attendance"
-                value={formData.attendance}
-                onChange={handleChange}
-              />
-            </>
-          )}
 
-        </Form.Group>
-
-        <Form.Button>Submit</Form.Button>
-      </Form>
+            {selectedJobClass === '1' && (
+              <>
+                <MyTextInput label="First Name" name="firstName" type="text" />
+                <MyTextInput label="Last Name" name="lastName" type="text" />
+                <MyTextInput label="Uptime" name="uptime" type="text" />
+                <MyTextInput label="Attendance" name="attendance" type="text" />
+                <MyTextInput label="Pallets Per Hour" name="palletsPerHour" type="text" />
+              </>
+            )}
+            {selectedJobClass === '2' && (
+              <>
+                <MyTextInput label="First Name" name="firstName" type="text" />
+                <MyTextInput label="Last Name" name="lastName" type="text" />
+                <MyTextInput label="Uptime" name="uptime" type="text" />
+                <MyTextInput label="Attendance" name="attendance" type="text" />
+                <MyTextInput label="Cases Per Hour" name="casesPerHour" type="text" />
+              </>
+            )}
+            {selectedJobClass === '3' && (
+              <>
+                <MyTextInput label="First Name" name="firstName" type="text" />
+                <MyTextInput label="Last Name" name="lastName" type="text" />
+                <MyTextInput label="Uptime" name="uptime" type="text" />
+                <MyTextInput label="Attendance" name="attendance" type="text" />
+                <MyTextInput label="Pallets Per Hour" name="palletsPerHour" type="text" />
+              </>
+            )}
+            {selectedJobClass === '4' && (
+              <>
+                <MyTextInput label="First Name" name="firstName" type="text" />
+                <MyTextInput label="Last Name" name="lastName" type="text" />
+                <MyTextInput label="Uptime" name="uptime" type="text" />
+                <MyTextInput label="Attendance" name="attendance" type="text" />
+                <MyTextInput label="Pallets Per Hour" name="palletsPerHour" type="text" />
+              </>
+            )}
+            {selectedJobClass === '5' && (
+              <>
+                <MyTextInput label="First Name" name="firstName" type="text" />
+                <MyTextInput label="Last Name" name="lastName" type="text" />
+                <MyTextInput label="Uptime" name="uptime" type="text" />
+                <MyTextInput label="Attendance" name="attendance" type="text" />
+                <MyTextInput label="Pallets Per Hour" name="palletsPerHour" type="text" />
+              </>
+            )}
+            
+            {/* Conditional rendering for other job classes can be added here */}
+            
+            <button type="submit" disabled={isSubmitting}>
+              Submit
+            </button>
+          </Form>
+        )}
+      </Formik>
     </div>
   );
 }

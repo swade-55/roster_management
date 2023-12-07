@@ -2,10 +2,12 @@ from flask import Flask,request, make_response, jsonify
 from flask_migrate import Migrate
 from models import db,Associate, Metric, AssociateMetric, Day, Schedule, JobClass
 from config import app
+from pulp import pulp
+from pulp import LpProblem, LpMinimize, LpVariable, lpSum, LpStatus
+from itertools import chain, repeat
+import pandas as pd
 
 from flask_cors import CORS
-
-
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///roster_management.db'
@@ -15,53 +17,11 @@ migrate = Migrate(app,db)
 
 db.init_app(app)
 
-CORS(app)
+# CORS(app)
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}})
+
 # Define the route to fetch associates and their metrics
-
-
-
-@app.route('/selectors_metrics', methods=['GET'])
-def get_selectors_metrics():
-    try:
-        # Desired job classes
-        desired_job_classes = ["Selector"]
-
-        # Fetch all associates that belong to the desired job classes
-        associates = Associate.query.join(JobClass, Associate.jobclass_id == JobClass.id).filter(JobClass.name.in_(desired_job_classes)).all()
-
-        workers_list = []
-
-        for associate in associates:
-            worker_dict = {}
-            worker_dict['id'] = associate.id
-            worker_dict['name'] = associate.first_name + " " + associate.last_name
-
-            # Fetch the job class of the associate to determine the specific metric
-            job_class = JobClass.query.get(associate.jobclass_id)
-
-            metrics_map = {
-                "Selector": {
-                    "Cases Per Hour": "casesPerHour", 
-                    "Uptime": "uptime",
-                    "Attendance": "attendance"
-                },
-            }
-
-            for metric_name, json_key in metrics_map[job_class.name].items():
-                metric_record = db.session.query(AssociateMetric, Metric).join(Metric, AssociateMetric.metric_id == Metric.id).filter(AssociateMetric.associate_id == associate.id, Metric.metricname == metric_name).first()
-                if metric_record:
-                    worker_dict[json_key] = metric_record.AssociateMetric.metric_value
-                else:
-                    worker_dict[json_key] = None  # or a default value
-
-            workers_list.append(worker_dict)
-
-        return jsonify(workers_list)  # Return list directly without embedding inside a dictionary
-
-    except Exception as e:
-        return jsonify({'error': str(e)})
-    
-    
+        
 @app.route('/associate_metrics/<int:associate_id>', methods=['DELETE'])
 def delete_associate(associate_id):
     try:
@@ -85,11 +45,7 @@ def delete_associate(associate_id):
         session.rollback()
         app.logger.error(f'Error deleting associate with id {associate_id}: {e}')
         return jsonify({'error': str(e)}), 500
-
-
-    
-    
-    
+        
 @app.route('/associates_working_days', methods=['GET'])
 def get_associates_working_days():
     try:
@@ -123,66 +79,7 @@ def get_associates_working_days():
     except Exception as e:
         app.logger.error(f'Error retrieving associates working days: {str(e)}')
         return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
-
-
-@app.route('/update_schedule/<int:associate_id>', methods=['PUT'])
-def update_schedule(associate_id):
-    try:
-        data = request.get_json()
-        
-        # Fetch the associate
-        #associate = Associate.query.get(associate_id)
-        associate = db.session.get(Associate, associate_id)
-        
-        if associate:
-            # Clear old schedules
-            Schedule.query.filter_by(associate_id=associate_id).delete()
-            
-            # Add new schedules
-            for day_name in data['working_days']:
-                day = Day.query.filter_by(title=day_name).first()
-                if day:
-                    new_schedule = Schedule(associate_id=associate_id, day_id=day.id)
-                    db.session.add(new_schedule)
-            
-            db.session.commit()
-            return jsonify({'message': 'Schedule updated successfully'})
-        else:
-            return jsonify({'error': 'Associate not found'}), 404
-        
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': str(e)}), 500
     
-@app.route('/workers', methods=['GET'])
-def get_workers_by_job_class():
-    job_classes = JobClass.query.all()  # Fetch all job classes
-    workers_data = {}
-
-    for job_class in job_classes:
-        associates = Associate.query.filter_by(jobclass_id=job_class.id).all()
-        workers_data[job_class.name] = []
-
-        for associate in associates:
-            # Here you build your workers' data structure including metrics
-            metrics_data = []
-            associate_metrics = AssociateMetric.query.filter_by(associate_id=associate.id).all()
-            for am in associate_metrics:
-                metric = Metric.query.get(am.metric_id)
-                metrics_data.append({
-                    'metric_id': am.metric_id,
-                    'metric_name': metric.metricname,
-                    'metric_value': am.metric_value
-                })
-
-            workers_data[job_class.name].append({
-                'id': associate.id,
-                'name': f"{associate.first_name} {associate.last_name}",
-                'metrics': metrics_data
-            })
-
-    return jsonify(workers_data)
-
 @app.route('/associate_metrics', methods=['GET'])
 def get_associate_metrics():
     try:
@@ -195,8 +92,8 @@ def get_associate_metrics():
                 'id': associate.id,
                 'first_name': associate.first_name,
                 'last_name': associate.last_name,
-                'job_class': associate.jobclass.name,  # Include the job class name
-                'metrics': []  # Initialize an empty array for metrics
+                'job_class': associate.jobclass.name if associate.jobclass else 'No Job Class',
+                'metrics': []
             }
 
             # Fetch metrics for this associate
@@ -226,58 +123,218 @@ def get_associate_metrics():
 
     except Exception as e:
         return jsonify({'error': str(e)})
-    
-    
+
 @app.route('/add_associate', methods=['POST'])
 def add_associate():
     try:
-        # Parse the incoming JSON data
         data = request.get_json()
+        app.logger.info(f'Received data for new associate: {data}')
 
-        # You may want to validate the data before processing it
-
-        # Check if the Associate already exists (assuming 'id' is sent for existing associates)
-        if 'id' in data:
-            associate = Associate.query.get(data['id'])
-            if not associate:
-                return jsonify({'error': 'Associate not found'}), 404
+        # Validate and convert job class ID
+        job_class_id = data.get('jobClass_id')
+        if job_class_id is not None:
+            job_class_id = int(job_class_id)
         else:
-            # Create a new Associate if one does not exist
+            return jsonify({'error': 'Job class ID is required'}), 400
+
+        # Validate job class
+        job_class = JobClass.query.get(job_class_id)
+        if not job_class:
+            app.logger.error(f'Job class with id {job_class_id} not found')
+            return jsonify({'error': f'Job class with id {job_class_id} not found'}), 404
+
+        # Check if the Associate already exists
+        associate_id = data.get('id')
+        if associate_id:
+            associate = Associate.query.get(associate_id)
+            if not associate:
+                app.logger.info(f'No associate found with id {associate_id}')
+                return jsonify({'error': f'Associate with id {associate_id} not found'}), 404
+        else:
+            # Create new associate if no ID is provided
             associate = Associate(
-                first_name=data['firstName'],
-                last_name=data['lastName'],
-                # ... other fields ...
-                jobclass_id=...  # Look up or create the JobClass based on data['jobClass']
+                first_name=data.get('firstName'),
+                last_name=data.get('lastName'),
+                jobclass_id=job_class_id
             )
             db.session.add(associate)
-        
-        # Commit the associate to get its id for the AssociateMetric
-        db.session.commit()
+            db.session.flush()  # This will populate 'associate.id' for new associates
 
-        # Now handle the metrics
-        for metric_name, value in [('uptime', data['uptime']), ('casesPerHour', data['casesPerHour']), ('attendance', data['attendance'])]:
+        # Process and save metrics
+        for metric_name, metric_value in data.get('metrics', {}).items():
+            if metric_value in [None, '']:
+                app.logger.info(f'Metric value for {metric_name} is empty or null, skipping.')
+                continue
+
+            try:
+                metric_value = float(metric_value)
+            except ValueError:
+                app.logger.error(f'Invalid metric value: {metric_value} for {metric_name}')
+                continue
+
             metric = Metric.query.filter_by(metricname=metric_name).first()
-            if metric:
-                associate_metric = AssociateMetric.query.filter_by(associate_id=associate.id, metric_id=metric.id).first()
-                if not associate_metric:
-                    associate_metric = AssociateMetric(
-                        associate_id=associate.id,
-                        metric_id=metric.id,
-                        metric_value=value
-                    )
-                    db.session.add(associate_metric)
-                else:
-                    associate_metric.metric_value = value
+            if not metric:
+                app.logger.error(f'Metric name not found: {metric_name}')
+                continue
+
+            associate_metric = AssociateMetric.query.filter_by(
+                associate_id=associate.id,
+                metric_id=metric.id
+            ).first()
+
+            if not associate_metric:
+                app.logger.info(f'Creating new AssociateMetric for {metric_name}')
+                associate_metric = AssociateMetric(
+                    associate_id=associate.id,
+                    metric_id=metric.id,
+                    metric_value=metric_value
+                )
+                db.session.add(associate_metric)
+            else:
+                app.logger.info(f'Updating AssociateMetric for {metric_name}')
+                associate_metric.metric_value = metric_value
 
         db.session.commit()
-
-        return jsonify({'message': 'Associate added/updated successfully'}), 200
+        return jsonify({'message': 'Associate added/updated successfully', 'associate_id': associate.id}), 200
 
     except Exception as e:
-        db.session.rollback()  # Rollback in case of error
+        db.session.rollback()
+        app.logger.error(f'Unhandled exception: {e}')
+        return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
+    
+@app.route('/update_associate', methods=['POST'])
+def update_associate():
+    data = request.get_json()
+    app.logger.info(f'Updating associate with data: {data}')
+    associate_id = data['associateId']
+
+    try:
+        associate = Associate.query.get(associate_id)
+        if not associate:
+            return jsonify({'error': 'Associate not found'}), 404
+
+        associate.first_name = data['firstName']
+        associate.last_name = data['lastName']
+        updated_metrics = data.get('metrics', [])
+
+        for metric_data in updated_metrics:
+            metric_id = metric_data.get('id')
+            metric_value = metric_data.get('value')
+
+            if metric_id is not None and metric_value is not None:
+                associate_metric = AssociateMetric.query.filter_by(
+                    associate_id=associate_id, metric_id=metric_id
+                ).first()
+                if associate_metric:
+                    associate_metric.metric_value = metric_value
+                else:
+                    # If the metric doesn't exist, create a new one
+                    new_metric = AssociateMetric(
+                        associate_id=associate_id,
+                        metric_id=metric_id,
+                        metric_value=metric_value
+                    )
+                    db.session.add(new_metric)
+
+        db.session.commit()
+        return jsonify({'message': 'Associate updated successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f'Exception updating associate: {e}')
+        return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
+    
+@app.route('/generate_schedule', methods=['POST'])
+def generate_schedule():
+    try:
+        # Extract user input from the request's JSON payload
+        data = request.get_json()
+
+        # Create a DataFrame for staff demands based on user input
+        jours = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+        n_staff = [data.get(day.lower(), 0) for day in jours]
+        df_staff = pd.DataFrame({'Days': jours, 'Staff Demand': n_staff})
+        # Run the optimization to get the initial schedule results
+        initial_schedule = run_optimization(data)
+        print('Initial schedule:', initial_schedule)
+
+        # Now let's process the results to get the daily schedule and demand vs. supply
+        schedule_results, total_staff = process_schedule_results(initial_schedule['schedule'])
+        print('Processed schedule:', schedule_results)
+
+        # Return the processed schedule along with the initial optimization results
+        return jsonify({
+            'initial_schedule': initial_schedule,
+            'schedule_results': schedule_results,
+            'total_staff': total_staff
+        })
+    except Exception as e:
+        app.logger.error(f"Error in generate_schedule: {e}", exc_info=True)
         return jsonify({'error': str(e)}), 500
+    
+def run_optimization(user_input):
+    print('Starting optimization with user input:', user_input)
+    days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    n_staff = [user_input.get(day.lower(), 0) for day in days]
+
+    jours = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+
+    # Create a circular list of days for the scheduling problem
+    n_days = list(range(6))
+    n_days_c = list(chain.from_iterable(repeat(n_days, 2)))
+
+    # Define working days and days off based on the circular list
+    list_in = [[n_days_c[j] for j in range(i, i + 4)] for i in n_days_c]
+    list_excl = [[n_days_c[j] for j in range(i + 1, i + 3)] for i in n_days_c]
+
+    # Initialize the optimization problem
+    model = LpProblem("Minimize Staffing", LpMinimize)
+
+    # Create decision variables for each day
+    x = LpVariable.dicts('shift', n_days, lowBound=0, cat='Integer')
+
+    # Objective function: Minimize the total number of staff
+    model += lpSum([x[i] for i in n_days])
+
+    # Constraints: Ensure enough staff for each day while considering days off
+    for d, l_excl, staff in zip(n_days, list_excl, n_staff):
+        model += lpSum([x[i] for i in n_days if i not in l_excl]) >= staff
+
+    # Solve the model
+    model.solve()
+
+    # Extract the results
+    schedule_results = {f"Shift for {jours[day]}": x[day].value() for day in n_days}
+    print('Optimization results:', schedule_results)
+
+    # Additional information like model status and total staff can also be returned
+    return {
+        "schedule": {str(k): int(v) for k, v in schedule_results.items()},
+        "status": str(LpStatus[model.status]),
+        "total_staff": int(pulp.value(model.objective))
+    }
+
+def process_schedule_results(schedule):
+    jours = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday']
+    # Convert schedule to dataframe
+    df_sch = pd.DataFrame(schedule.items(), columns=['Day', 'Staff']).set_index('Day')
+    df_sch = df_sch.reindex(jours).fillna(0).T
+    
+    # Assume df_staff is already defined or passed in with staff demands per day
+    # Calculate the total staff and extra resources
+    total_staff = df_sch.sum(axis=1).iloc[0]
+    df_supp = df_staff.set_index('Days')
+    df_supp['Staff Supply'] = df_sch.sum()
+    df_supp['Extra_Resources'] = df_supp['Staff Supply'] - df_supp['Staff Demand']
+    
+    # Convert the results back to a dictionary for JSON serialization
+    schedule_results = {
+        'schedule_by_day': df_sch.to_dict('records')[0],
+        'demand_vs_supply': df_supp.to_dict('index')
+    }
+    return schedule_results, total_staff
 
 
 
+    
 if __name__=='__main__':
     app.run(port=5555)

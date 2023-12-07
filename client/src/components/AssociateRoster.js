@@ -16,12 +16,12 @@ function AssociateRoster() {
   const selectorList = selectors.map(selector=>{
         return <AssociateCard key={selector.id} worker={selector} handleDelete={handleDelete}/>
     })
-  const letForks = workers.filter(forklift=>forklift.job_class==='Putaway Forklift')
-  const letForkCards = letForks.map(forklift=>{
+  const putForks = workers.filter(forklift=>forklift.job_class==='Putaway Forklift')
+  const putForkCards = putForks.map(forklift=>{
     return <AssociateCard key = {forklift.id} worker={forklift} handleDelete={handleDelete}/>
   })
-  const putForks = workers.filter(forklift=>forklift.job_class==='Letdown Forklift')
-  const putForkCards = putForks.map(forklift=>{
+  const letForks = workers.filter(forklift=>forklift.job_class==='Letdown Forklift')
+  const letForkCards = letForks.map(forklift=>{
     return <AssociateCard key={forklift.id} worker={forklift} handleDelete={handleDelete}/>
   })
   const loaders = workers.filter(loader=>loader.job_class==='Loader')

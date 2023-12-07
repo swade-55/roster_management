@@ -12,6 +12,8 @@ sqlalchemy-serializer = "*"
 flask-restful = "*"
 flask-cors = "*"
 faker = "*"
+pulp = "*"
+pandas = "*"
 
 [requires]
 python_full_version = "3.8.13"

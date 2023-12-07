@@ -1,29 +1,24 @@
 // App.js
 import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch} from 'react-redux';
 import MasterOperatingPlan from './MasterOperatingPlan';
 import NavBar from './NavBar';
 import { Route, Switch } from 'react-router-dom';
 import About from './About';
 import AssociateForm from './AssociateForm';
+import ScheduleForm from './ScheduleForm';
 import AssociatesTable from './AssociatesTable';
-import { addWorker,setWorkers } from '../features/workersSlice';
+import { fetchMetrics } from '../features/metricsSlice';
+import { fetchWorkers } from '../features/workersSlice';
 
 function App() {
   const dispatch = useDispatch();
-  const workers = useSelector((state) => state.workers);
 
   useEffect(() => {
     console.log('in use effect');
-    fetch(`http://localhost:5555/associate_metrics`)
-      .then((r) => r.json())
-      .then((data) => dispatch(setWorkers(data)));
+    dispatch(fetchMetrics());
+    dispatch(fetchWorkers());
   }, [dispatch]);
-
-  function handleAddWorkers(newWorker) {
-    // Dispatch the addWorker action
-    dispatch(addWorker(newWorker));
-  }
 
   return (
     <div className="app-container">
@@ -34,13 +29,16 @@ function App() {
             <About />
           </Route>
           <Route exact path="/employeeform">
-            <AssociateForm onAddWorker={handleAddWorkers} />
+            <AssociateForm />
           </Route>
           <Route exact path="/">
-            <MasterOperatingPlan workers={workers} />
+            <MasterOperatingPlan/>
           </Route>
           <Route exact path="/associatetable">
             <AssociatesTable />
+          </Route>
+          <Route exact path="/schedulebuilder">
+            <ScheduleForm />
           </Route>
         </Switch>
       </div>

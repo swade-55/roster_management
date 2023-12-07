@@ -1,4 +1,3 @@
-// metricsSlice.js
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 
@@ -16,37 +15,27 @@ const initialState = {
 
 // Async thunk to fetch metrics
 export const fetchMetrics = createAsyncThunk('metrics/fetchMetrics', async () => {
-  const response = await axios.get('/selectors_metrics');
+  const response = await axios.get('http://localhost:5555/associate_metrics'); // Update the URL to your Flask API
   return response.data;
 });
 
 // Extract and calculate metrics from worker data
 const calculateMetrics = (workers) => {
-  // The structure of the workers array needs to be taken into account.
-  // It seems the workers array contains objects with a metrics property that is an array.
-  // You would first need to transform this structure to match what calculateMetrics expects.
-  let transformedWorkers = workers.map(worker => {
-    let metrics = {
-      attendance: 0,
-      casesPerHour: 0,
-      uptime: 0
-    };
+  let transformedWorkers = workers.map(worker => ({
+    attendance: worker.metrics.find(m => m.metric_name === 'attendance')?.value || 0,
+    casesPerHour: worker.metrics.find(m => m.metric_name === 'palletsPerHour')?.value || 0,
+    uptime: worker.metrics.find(m => m.metric_name === 'uptime')?.value || 0,
+  }));
 
-    worker.metrics.forEach(metric => {
-      if (metric.metric_name === 'Attendance') metrics.attendance = metric.value;
-      if (metric.metric_name === 'Pallets Per Hour') metrics.casesPerHour = metric.value;
-      if (metric.metric_name === 'Uptime') metrics.uptime = metric.value;
-    });
 
-    return metrics;
-  });
+
 
   return {
-    totalCapacity: 0, // Implement logic to calculate totalCapacity if needed
-    averageAttendance: transformedWorkers.reduce((sum, worker) => sum + worker.attendance, 0) / transformedWorkers.length,
-    averageCPH: transformedWorkers.reduce((sum, worker) => sum + worker.casesPerHour, 0) / transformedWorkers.length,
-    averageUptime: transformedWorkers.reduce((sum, worker) => sum + worker.uptime, 0) / transformedWorkers.length,
-    headCount: workers.length
+    totalCapacity: 0, // Calculate totalCapacity based on your business logic
+    averageAttendance: transformedWorkers.reduce((sum, w) => sum + Number(w.attendance), 0) / (transformedWorkers.length || 1),
+    averageCPH: transformedWorkers.reduce((sum, w) => sum + Number(w.casesPerHour), 0) / (transformedWorkers.length || 1),
+    averageUptime: transformedWorkers.reduce((sum, w) => sum + Number(w.uptime), 0) / (transformedWorkers.length || 1),
+    headCount: workers.length,
   };
 };
 
@@ -54,6 +43,7 @@ const metricsSlice = createSlice({
   name: 'metrics',
   initialState,
   reducers: {
+    // Reducer to manually set metrics
     setMetrics: (state, action) => {
       return { ...state, ...action.payload };
     },
@@ -65,8 +55,6 @@ const metricsSlice = createSlice({
     [fetchMetrics.fulfilled]: (state, action) => {
       state.status = 'succeeded';
       state.workers = action.payload;
-      // Assuming your server response structure matches your state structure.
-      // Otherwise, you would transform the response here before assigning.
       const newMetrics = calculateMetrics(action.payload);
       state.totalCapacity = newMetrics.totalCapacity;
       state.averageAttendance = newMetrics.averageAttendance;
@@ -87,5 +75,6 @@ export const updateMetrics = (workers) => (dispatch) => {
   const metrics = calculateMetrics(workers);
   dispatch(setMetrics(metrics));
 };
+
 
 export default metricsSlice.reducer;
