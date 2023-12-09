@@ -127,6 +127,7 @@ def get_associate_metrics():
 @app.route('/add_associate', methods=['POST'])
 def add_associate():
     try:
+        print("adding associate")
         data = request.get_json()
         app.logger.info(f'Received data for new associate: {data}')
 
@@ -151,7 +152,7 @@ def add_associate():
                 app.logger.info(f'No associate found with id {associate_id}')
                 return jsonify({'error': f'Associate with id {associate_id} not found'}), 404
         else:
-            # Create new associate if no ID is provided
+            # Create new associate if no ID is providedcommand:~remote.forwardedPorts.focus
             associate = Associate(
                 first_name=data.get('firstName'),
                 last_name=data.get('lastName'),

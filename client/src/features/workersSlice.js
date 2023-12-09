@@ -6,7 +6,7 @@ export const addWorker = createAsyncThunk(
   async (workerData, { rejectWithValue }) => {
     console.log('dispatching data',workerData)
     try {
-      const response = await fetch('http://localhost:5555/add_associate', {
+      const response = await fetch('/add_associate', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
