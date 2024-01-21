@@ -6,6 +6,7 @@ import NavBar from './NavBar';
 import { Route, Switch } from 'react-router-dom';
 import About from './About';
 import AssociateForm from './AssociateForm';
+import AllocationSummary from './AllocationSummary'
 import ScheduleForm from './ScheduleForm';
 import AssociatesTable from './AssociatesTable';
 import { fetchMetrics } from '../features/metricsSlice';
@@ -39,6 +40,9 @@ function App() {
           </Route>
           <Route exact path="/schedulebuilder">
             <ScheduleForm />
+          </Route>
+          <Route exact path="/allocationsummary">
+            <AllocationSummary />
           </Route>
         </Switch>
       </div>

@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
 
 // Define the initial state with additional properties
 const initialState = {
@@ -15,8 +14,9 @@ const initialState = {
 
 // Async thunk to fetch metrics
 export const fetchMetrics = createAsyncThunk('metrics/fetchMetrics', async () => {
-  const response = await axios.get('http://localhost:5555/associate_metrics'); // Update the URL to your Flask API
-  return response.data;
+  const response = await fetch('http://localhost:5555/associate_metrics');
+  const data = await response.json();
+  return data;
 });
 
 // Extract and calculate metrics from worker data
@@ -48,26 +48,32 @@ const metricsSlice = createSlice({
       return { ...state, ...action.payload };
     },
   },
-  extraReducers: {
-    [fetchMetrics.pending]: (state, action) => {
-      state.status = 'loading';
-    },
-    [fetchMetrics.fulfilled]: (state, action) => {
-      state.status = 'succeeded';
-      state.workers = action.payload;
-      const newMetrics = calculateMetrics(action.payload);
-      state.totalCapacity = newMetrics.totalCapacity;
-      state.averageAttendance = newMetrics.averageAttendance;
-      state.averageCPH = newMetrics.averageCPH;
-      state.averageUptime = newMetrics.averageUptime;
-      state.headCount = newMetrics.headCount;
-    },
-    [fetchMetrics.rejected]: (state, action) => {
-      state.status = 'failed';
-      state.error = action.error.message;
-    },
-  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchMetrics.pending, (state, action) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchMetrics.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.workers = action.payload;
+        if (!Array.isArray(action.payload)) {
+          state.error = 'Data received is not an array';
+          return;
+        }
+        const newMetrics = calculateMetrics(action.payload);
+        state.totalCapacity = newMetrics.totalCapacity;
+        state.averageAttendance = newMetrics.averageAttendance;
+        state.averageCPH = newMetrics.averageCPH;
+        state.averageUptime = newMetrics.averageUptime;
+        state.headCount = newMetrics.headCount;
+      })
+      .addCase(fetchMetrics.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.error.message;
+      });
+  }
 });
+
 
 export const { setMetrics } = metricsSlice.actions;
 

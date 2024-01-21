@@ -14,6 +14,8 @@ flask-cors = "*"
 faker = "*"
 pulp = "*"
 pandas = "*"
+scipy = "*"
+authlib = "*"
 
 [requires]
 python_full_version = "3.8.13"
