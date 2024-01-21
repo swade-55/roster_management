@@ -81,44 +81,53 @@ function AssociateForm() {
   
 
   // onSubmit function with Redux dispatch
-  const onSubmit = (values, { setSubmitting, resetForm }) => {
-    console.log('Submitting Form with Values:', values); // Debug log
-    // Prepare the metrics object
-    const metrics = {
-      uptime: values.uptime,
-      casesPerHour: values.casesPerHour,
-      palletsPerHour: values.palletsPerHour,
-      attendance: values.attendance
-    };
+const onSubmit = (values, { setSubmitting, resetForm }) => {
+  console.log('Submitting Form with Values:', values); // Debug log
 
-    // Remove any empty metric entries
-    Object.keys(metrics).forEach(key => metrics[key] === '' && delete metrics[key]);
-
-    // Create the payload to send to the server
-    const payload = {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      jobClass_id: parseInt(values.jobClass_id, 10), // Convert jobClass_id to an integer
-      metrics: metrics
-    };
-
-    console.log('Attempting to submit form with values:', payload);
-    
-    // Dispatching the action with form data
-    dispatch(addWorker(payload))
-      .unwrap()
-      .then(addedWorker => {
-        console.log('Form submission successful, added worker:', addedWorker);
-        dispatch(fetchWorkers())
-        resetForm();
-      })
-      .catch(error => {
-        console.error('Form submission error:', error);
-      })
-      .finally(() => {
-        setSubmitting(false);
-      });
+  // Prepare the metrics object
+  let metrics = [];
+  const metricNames = {
+    uptime: 'Uptime',
+    casesPerHour: 'Cases Per Hour',
+    palletsPerHour: 'Pallets Per Hour',
+    attendance: 'Attendance'
   };
+
+  Object.keys(metricNames).forEach(key => {
+    if (values[key]) {
+      metrics.push({
+        name: metricNames[key],
+        value: values[key]
+      });
+    }
+  });
+
+  // Create the payload to send to the server
+  const payload = {
+    firstName: values.firstName,
+    lastName: values.lastName,
+    jobClass_id: parseInt(values.jobClass_id, 10), // Convert jobClass_id to an integer
+    metrics: metrics
+  };
+
+  console.log('Attempting to submit form with values:', payload);
+
+  // Dispatching the action with form data
+  dispatch(addWorker(payload))
+    .unwrap()
+    .then(addedWorker => {
+      console.log('Form submission successful, added worker:', addedWorker);
+      dispatch(fetchWorkers())
+      resetForm();
+    })
+    .catch(error => {
+      console.error('Form submission error:', error);
+    })
+    .finally(() => {
+      setSubmitting(false);
+    });
+};
+
 
   return (
     <div>
