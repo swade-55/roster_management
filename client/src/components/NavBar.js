@@ -40,31 +40,3 @@ function NavBar() {
 
 export default NavBar;
 
-
-// export default function NavBar() {
-//     const activeItem = 'home';
-// //   state = { activeItem: 'home' }
-
-//     const handleItemClick = (e, { name }) => console.log('hi')
-
-//     return (
-//       <Menu pointing vertical>
-//         <Menu.Item
-//           name='home'
-//           active={activeItem === 'home'}
-//           onClick={handleItemClick}
-//         />
-//         <Menu.Item
-//           name='messages'
-//           active={activeItem === 'messages'}
-//           onClick={handleItemClick}
-//         />
-//         <Menu.Item
-//           name='friends'
-//           active={activeItem === 'friends'}
-//           onClick={handleItemClick}
-//         />
-//       </Menu>
-//     )
-
-// }
