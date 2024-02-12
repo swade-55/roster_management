@@ -112,7 +112,31 @@ const AssociatesTable = () => {
         </tbody>
       </table>
       {currentAssociate && (
-        <Modal isOpen={modalIsOpen} onRequestClose={closeModal}>
+        <Modal
+         isOpen={modalIsOpen} 
+         onRequestClose={closeModal}
+         style={{
+          overlay: {
+            backgroundColor: 'rgba(0, 0, 0, 0.75)'
+          },
+          content: {
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            right: 'auto',
+            bottom: 'auto',
+            marginRight: '-50%',
+            transform: 'translate(-50%, -50%)',
+            border: '1px solid #ccc',
+            background: '#fff',
+            overflow: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            borderRadius: '4px',
+            outline: 'none',
+            padding: '20px'
+          }
+        }}
+         >
           <h2>Editing schedule for {currentAssociate.name}</h2>
           <form onSubmit={handleFormSubmit}>
             {daysOfWeek.map((day) => (

@@ -3,6 +3,7 @@ import AssociateCard from "./AssociateCard";
 import { Card } from "semantic-ui-react";
 import {useDispatch,useSelector} from 'react-redux'
 import {deleteWorker} from '../features/workersSlice'
+import Header from './Header';
 
 function AssociateRoster() {
   const dispatch = useDispatch();
@@ -10,6 +11,15 @@ function AssociateRoster() {
   const handleDelete = (workerId)=>{
     dispatch(deleteWorker(workerId))
   }
+
+  const stickyHeaderStyle = {
+    position: 'sticky',
+    top: '0', // This determines how far from the top the item will "stick"
+    backgroundColor: 'white', // Background color to cover the content behind it
+    zIndex: '10', // Ensure the header is above other content
+    boxShadow: '0 2px 2px -1px rgba(0,0,0,0.4)', // Optional: adds a shadow to the header
+    padding: '10px', // Optional: for better spacing
+  };
 
 
   const selectors = workers.filter(selector=>selector.job_class==='Selector')
@@ -37,23 +47,24 @@ function AssociateRoster() {
 
   return (
     <div>
-    <h2>Selectors</h2>
+    <h2 style={stickyHeaderStyle}>Selectors</h2>
+    <Header/>
     <Card.Group itemsPerRow={4}>
       {selectorList}
     </Card.Group>
-     <h2>Letdown Forklifts</h2>
+     <h2 style={stickyHeaderStyle}>Letdown Forklifts</h2>
     <Card.Group itemsPerRow={4}>
       {letForkCards}
     </Card.Group>
-    <h2>Putaway Forklifts</h2>
+    <h2 style={stickyHeaderStyle}>Putaway Forklifts</h2>
     <Card.Group itemsPerRow={4}>
       {putForkCards}
     </Card.Group>
-    <h2>Loaders</h2>
+    <h2 style={stickyHeaderStyle}>Loaders</h2>
     <Card.Group itemsPerRow={4}>
       {loaderCards}
     </Card.Group>
-    <h2>Receivers</h2>
+    <h2 style={stickyHeaderStyle}>Receivers</h2>
     <Card.Group itemsPerRow={4}>
       {receiverCards}
     </Card.Group>

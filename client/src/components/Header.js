@@ -8,12 +8,20 @@ function Header() {
   const averageCPH = useSelector(state => state.metrics.averageCPH);
   const averageUptime = useSelector(state => state.metrics.averageUptime);
 
+  const stickyHeaderStyle = {
+    position: 'sticky',
+    top: '0', // This determines how far from the top the item will "stick"
+    backgroundColor: 'white', // Background color to cover the content behind it
+    zIndex: '10', // Ensure the header is above other content
+    boxShadow: '0 2px 2px -1px rgba(0,0,0,0.4)', // Optional: adds a shadow to the header
+    width: '100%', // Ensure the header stretches across the full width of its container
+  };
+
   // Function to round numbers to two decimal places
   const formatNumber = (num) => Math.round(num * 100) / 100;
 
   return (
-    <div className="header-container">
-      <h1 className="header-title">Your Company Metrics</h1>
+    <div className="header-container" style={stickyHeaderStyle}>
       <table className="ui definition table">
         <thead>
           <tr>

@@ -15,33 +15,33 @@ from datetime import datetime
 from flask_cors import CORS
 
 
-
+from routes.routes import * 
 
 CORS(app, resources={r"/*": {"origins": "*"}})
 
-@app.route('/associate_metrics/<int:associate_id>', methods=['DELETE'])
-def delete_associate(associate_id):
-    try:
-        # Get the session
-        session = db.session
+# @app.route('/associate_metrics/<int:associate_id>', methods=['DELETE'])
+# def delete_associate(associate_id):
+#     try:
+#         # Get the session
+#         session = db.session
         
-        # Get the associate with the new session.get method
-        associate = session.get(Associate, associate_id)
-        if associate:
-            # Delete related associate metrics first to handle foreign key constraints
-            AssociateMetric.query.filter_by(associate_id=associate_id).delete()
+#         # Get the associate with the new session.get method
+#         associate = session.get(Associate, associate_id)
+#         if associate:
+#             # Delete related associate metrics first to handle foreign key constraints
+#             AssociateMetric.query.filter_by(associate_id=associate_id).delete()
             
-            # Now delete the associate
-            session.delete(associate)
-            session.commit()
-            return jsonify({'message': 'Associate deleted successfully'})
-        else:
-            return jsonify({'error': 'Associate not found'}), 404
-    except Exception as e:
-        # Roll back the session in case of an exception
-        session.rollback()
-        app.logger.error(f'Error deleting associate with id {associate_id}: {e}')
-        return jsonify({'error': str(e)}), 500
+#             # Now delete the associate
+#             session.delete(associate)
+#             session.commit()
+#             return jsonify({'message': 'Associate deleted successfully'})
+#         else:
+#             return jsonify({'error': 'Associate not found'}), 404
+#     except Exception as e:
+#         # Roll back the session in case of an exception
+#         session.rollback()
+#         app.logger.error(f'Error deleting associate with id {associate_id}: {e}')
+#         return jsonify({'error': str(e)}), 500
         
 @app.route('/associates_working_days', methods=['GET'])
 def get_associates_working_days():
@@ -356,26 +356,29 @@ def update_schedule(associate_id):
         print("Received data:", data)
         for schedule_update in data:
             # Parse only the time part
+            shift_start_time = datetime.strptime(schedule_update['shift_start'], '%H:%M:%S').time()
+            shift_end_time = datetime.strptime(schedule_update['shift_end'], '%H:%M:%S').time()
             schedule = Schedule.query.filter_by(
                 associate_id=associate_id, 
                 id=schedule_update['day_id']
             ).first()
-            shift_start_time = datetime.strptime(schedule_update['shift_start'], '%H:%M:%S').time()
-            shift_end_time = datetime.strptime(schedule_update['shift_end'], '%H:%M:%S').time()
+            
+            schedule.shift_start = shift_start_time
+            schedule.shift_end = shift_end_time
 
-            # Update the schedule if it exists
-            if schedule:
-                schedule.shift_start = shift_start_time
-                schedule.shift_end = shift_end_time
-            else:
-                # If no existing schedule, create a new one
-                new_schedule = Schedule(
-                    associate_id=associate_id,
-                    day_id=schedule_update['day_id'],
-                    shift_start=shift_start_time,
-                    shift_end=shift_end_time
-                )
-                db.session.add(new_schedule)
+            # # Update the schedule if it exists
+            # if schedule:
+            #     schedule.shift_start = shift_start_time
+            #     schedule.shift_end = shift_end_time
+            # else:
+            #     # If no existing schedule, create a new one
+            #     new_schedule = Schedule(
+            #         associate_id=associate_id,
+            #         day_id=schedule_update['day_id'],
+            #         shift_start=shift_start_time,
+            #         shift_end=shift_end_time
+            #     )
+            #     db.session.add(new_schedule)
 
         # Commit the changes to the database
         db.session.commit()

@@ -27,30 +27,6 @@ function AssociateCard({ worker }) {
     });
   }
 
-  // function handleUpdate() {
-  //   const updatedData = {
-  //     associateId: worker.id,
-  //     firstName: firstName,
-  //     lastName: lastName,
-  //     metrics: metrics.map(metric => ({
-  //       id: metric.id, // Include the metric ID
-  //       value: parseInt(metric.value, 10) // Ensure value is an integer
-  //     }))
-  //   };
-  
-  //   dispatch(updateAssociate(updatedData))
-  //     .unwrap()
-  //     .then(response => {
-  //       console.log('Update successful:', response);
-  //       console.log('Updated data sent:', updatedData);
-  //       setEditMode(false);
-  //       // Update local state if necessary, e.g., refresh worker data
-  //     })
-  //     .catch(error => {
-  //       console.error('Error updating associate:', error);
-  //     });
-  // }
-
   function handleUpdate() {
     const updatedData = {
       associateId: worker.id,
@@ -73,18 +49,6 @@ function AssociateCard({ worker }) {
   }
   
 
-  // function handleMetricChange(index, value) {
-  //   console.log(`Metric change - Index: ${index}, Value: ${value}`);
-  //   const newMetrics = metrics.map((metric, i) => {
-  //     if (i === index) {
-  //       return { ...metric, value };
-  //     }
-  //     return metric;
-  //   });
-  //   console.log('Updated metrics in local state:', newMetrics);
-  //   setMetrics(newMetrics);
-  // }
-
   function handleMetricChange(metricId, newValue) {
     console.log(`Metric change - Metric ID: ${metricId}, New Value: ${newValue}`);
     // Map over the metrics and update the value where the id matches
@@ -99,14 +63,6 @@ function AssociateCard({ worker }) {
   }
   
 
-  // const metricInputs = metrics.map((metric, index) => (
-  //   <input
-  //     key={index}
-  //     type="number"
-  //     value={metric.value}
-  //     onChange={e => handleMetricChange(index, e.target.value)}
-  //   />
-  // ));
 
   const metricInputs = metrics.map((metric, index) => (
     <input

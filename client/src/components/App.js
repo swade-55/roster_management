@@ -21,29 +21,23 @@ function App() {
     dispatch(fetchWorkers());
   }, [dispatch]);
 
+  // Styles to add padding to the main content so it doesn't overlap with the sidebar
+  const mainContentStyle = {
+    marginLeft: '200px', // Should be the same as the width of the sidebar
+    padding: '1rem',
+  };
+
   return (
     <div className="app-container">
       <NavBar />
-      <div className="main-content">
+      <div className="main-content" style={mainContentStyle}>
         <Switch>
-          <Route exact path="/about">
-            <About />
-          </Route>
-          <Route exact path="/employeeform">
-            <AssociateForm />
-          </Route>
-          <Route exact path="/">
-            <MasterOperatingPlan/>
-          </Route>
-          <Route exact path="/associatetable">
-            <AssociatesTable />
-          </Route>
-          <Route exact path="/schedulebuilder">
-            <ScheduleForm />
-          </Route>
-          <Route exact path="/allocationsummary">
-            <AllocationSummary />
-          </Route>
+          <Route exact path="/about" component={About} />
+          <Route exact path="/employeeform" component={AssociateForm} />
+          <Route exact path="/" component={MasterOperatingPlan} />
+          <Route exact path="/associatetable" component={AssociatesTable} />
+          <Route exact path="/schedulebuilder" component={ScheduleForm} />
+          <Route exact path="/allocationsummary" component={AllocationSummary} />
         </Switch>
       </div>
     </div>
