@@ -22,7 +22,7 @@
     "json-server": "^0.15.1"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "react-scripts --openssl-legacy-provider start",
     "server": "json-server --watch db.json -p 3001"
   },
   "eslintConfig": {

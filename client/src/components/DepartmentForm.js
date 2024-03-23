@@ -33,20 +33,17 @@ const DepartmentForm = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // The structure the backend expects
     const payload = {
-      departments: departmentData.departments, // this should be an object of objects
-      total_heads: departmentData.total_heads, // this should be a number
+      departments: departmentData.departments, 
+      total_heads: departmentData.total_heads, 
     };
     dispatch(fetchAllocation(payload));
     
   };
   
-  // Render form elements for each department dynamically
-  // For simplicity, let's assume you have a static list of departments: DeptA, DeptB, DeptC
   return (
     <form onSubmit={handleSubmit} className="streamlit-form">
-      {['DeptA', 'DeptB', 'DeptC'].map(deptName => (
+      {['Perishable', 'Grocery', 'Frozen'].map(deptName => (
         <div key={deptName}>
           <h2>{deptName}</h2>
           <div>

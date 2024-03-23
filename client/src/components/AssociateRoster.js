@@ -3,7 +3,6 @@ import AssociateCard from "./AssociateCard";
 import { Card } from "semantic-ui-react";
 import {useDispatch,useSelector} from 'react-redux'
 import {deleteWorker} from '../features/workersSlice'
-import Header from './Header';
 
 function AssociateRoster() {
   const dispatch = useDispatch();
@@ -12,59 +11,51 @@ function AssociateRoster() {
     dispatch(deleteWorker(workerId))
   }
 
-  const stickyHeaderStyle = {
-    position: 'sticky',
-    top: '0', // This determines how far from the top the item will "stick"
-    backgroundColor: 'white', // Background color to cover the content behind it
-    zIndex: '10', // Ensure the header is above other content
-    boxShadow: '0 2px 2px -1px rgba(0,0,0,0.4)', // Optional: adds a shadow to the header
-    padding: '10px', // Optional: for better spacing
-  };
 
 
-  const selectors = workers.filter(selector=>selector.job_class==='Selector')
+
+  const selectors = workers.workers.filter(selector=>selector.jobclass_id===2)
   const selectorList = selectors.map(selector=>{
-        return <AssociateCard key={selector.id} worker={selector} handleDelete={handleDelete}/>
-    })
-  const putForks = workers.filter(forklift=>forklift.job_class==='Putaway Forklift')
+         return <AssociateCard key = {selector.id} worker={selector} handleDelete={handleDelete}/>
+     })
+  const putForks = workers.workers.filter(forklift=>forklift.jobclass_id===1)
   const putForkCards = putForks.map(forklift=>{
-    return <AssociateCard key = {forklift.id} worker={forklift} handleDelete={handleDelete}/>
-  })
-  const letForks = workers.filter(forklift=>forklift.job_class==='Letdown Forklift')
-  const letForkCards = letForks.map(forklift=>{
-    return <AssociateCard key={forklift.id} worker={forklift} handleDelete={handleDelete}/>
-  })
-  const loaders = workers.filter(loader=>loader.job_class==='Loader')
-  const loaderCards = loaders.map(loader=>{
-    return <AssociateCard key={loader.id} worker={loader} handleDelete={handleDelete}/>
-  })
-  const receivers = workers.filter(worker=>worker.job_class==='Receiver')
-  const receiverCards = receivers.map(receiver=>{
-    return <AssociateCard key={receiver.id} worker={receiver} handleDelete={handleDelete}/>
-  })
+     return <AssociateCard key = {forklift.id} worker={forklift} handleDelete={handleDelete}/>
+   })
+   const letForks = workers.workers.filter(forklift=>forklift.jobclass_id===5)
+   const letForkCards = letForks.map(forklift=>{
+     return <AssociateCard key={forklift.id} worker={forklift} handleDelete={handleDelete}/>
+   })
+   const loaders = workers.workers.filter(loader=>loader.jobclass_id===3)
+   const loaderCards = loaders.map(loader=>{
+     return <AssociateCard key={loader.id} worker={loader} handleDelete={handleDelete}/>
+   })
+   const receivers = workers.workers.filter(worker=>worker.jobclass_id===4)
+   const receiverCards = receivers.map(receiver=>{
+     return <AssociateCard key={receiver.id} worker={receiver} handleDelete={handleDelete}/>
+   })
 
 
 
   return (
     <div>
-    <h2 style={stickyHeaderStyle}>Selectors</h2>
-    <Header/>
+    <h2>Selectors</h2>
     <Card.Group itemsPerRow={4}>
       {selectorList}
     </Card.Group>
-     <h2 style={stickyHeaderStyle}>Letdown Forklifts</h2>
+     <h2>Letdown Forklifts</h2>
     <Card.Group itemsPerRow={4}>
       {letForkCards}
     </Card.Group>
-    <h2 style={stickyHeaderStyle}>Putaway Forklifts</h2>
+    <h2>Putaway Forklifts</h2>
     <Card.Group itemsPerRow={4}>
       {putForkCards}
     </Card.Group>
-    <h2 style={stickyHeaderStyle}>Loaders</h2>
+    <h2>Loaders</h2>
     <Card.Group itemsPerRow={4}>
       {loaderCards}
     </Card.Group>
-    <h2 style={stickyHeaderStyle}>Receivers</h2>
+    <h2>Receivers</h2>
     <Card.Group itemsPerRow={4}>
       {receiverCards}
     </Card.Group>

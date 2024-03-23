@@ -32,6 +32,7 @@ function NavBar() {
         <div style={sidebarStyles}>
             <NavLink style={linkStyles} to="/">Roster</NavLink>
             <NavLink style={linkStyles} to="/employeeform">Add Associate</NavLink>
+            <NavLink style={linkStyles} to="/executivesummary">Executive Summary</NavLink>
             <NavLink style={linkStyles} to="/about">About</NavLink>
             <NavLink style={linkStyles} to="/associatetable">Associate Schedules</NavLink>
             <NavLink style={linkStyles} to="/schedulebuilder">Schedule Build Optimizer </NavLink>

@@ -5,19 +5,19 @@ import MasterOperatingPlan from './MasterOperatingPlan';
 import NavBar from './NavBar';
 import { Route, Switch } from 'react-router-dom';
 import About from './About';
+import ExecutiveSummary from './ExecutiveSummary';
 import AssociateForm from './AssociateForm';
 import AllocationSummary from './AllocationSummary'
 import ScheduleForm from './ScheduleForm';
 import AssociatesTable from './AssociatesTable';
-import { fetchMetrics } from '../features/metricsSlice';
+// import { fetchMetrics } from '../features/metricsSlice';
 import { fetchWorkers } from '../features/workersSlice';
 
 function App() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    console.log('in use effect');
-    dispatch(fetchMetrics());
+    // dispatch(fetchMetrics());
     dispatch(fetchWorkers());
   }, [dispatch]);
 
@@ -32,6 +32,7 @@ function App() {
       <NavBar />
       <div className="main-content" style={mainContentStyle}>
         <Switch>
+          <Route exact path="/executivesummary" component={ExecutiveSummary}/>
           <Route exact path="/about" component={About} />
           <Route exact path="/employeeform" component={AssociateForm} />
           <Route exact path="/" component={MasterOperatingPlan} />

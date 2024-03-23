@@ -13,16 +13,17 @@ class Associate(db.Model, SerializerMixin):
     dateofhire = db.Column(db.Date)
     department_id = db.Column(db.Integer, db.ForeignKey('departments.id'))
     jobclass_id = db.Column(db.Integer, db.ForeignKey('jobclasses.id'))
-    department = db.relationship('Department', backref='associates')
-    jobclass = db.relationship('JobClass', backref='associates')
+    department = db.relationship('Department', back_populates='associates')
+    jobclass = db.relationship('JobClass', back_populates='associates')
     metrics = db.relationship('AssociateMetric', back_populates='associate')
-    schedules = db.relationship('Schedule', backref='associate_in_schedule')
+    schedules = db.relationship('Schedule', back_populates='associate_in_schedule')
     
     serialize_rules = (
-        '-metrics.associate',
-        '-schedules.associate'
+        '-department.associates',  
+        '-jobclass.associates',    
+        '-metrics',      
+        '-schedules.associate_in_schedule', 
     )
-
 class Day(db.Model, SerializerMixin):
     __tablename__ = 'days'
     id = db.Column(db.Integer, primary_key=True)
@@ -33,10 +34,11 @@ class Metric(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     metricname = db.Column(db.String(100))
     calculation = db.Column(db.String(255))
-    associates = db.relationship('AssociateMetric',back_populates='metric')
+    
+    associate_metrics = db.relationship('AssociateMetric', back_populates='metric')
     
     serialize_rules = (
-        '-associate.metric',
+        '-associate_metrics', 
     )
 
 class AssociateMetric(db.Model, SerializerMixin):
@@ -46,12 +48,11 @@ class AssociateMetric(db.Model, SerializerMixin):
     metric_id = db.Column(db.Integer, db.ForeignKey('metrics.id'))
     metric_value = db.Column(db.Float)
     associate = db.relationship('Associate', back_populates='metrics')
-    metric = db.relationship('Metric',back_populates='associates')
+    metric = db.relationship('Metric', back_populates='associate_metrics')
     
     serialize_rules = (
-        '-associates',
-        
-        '-metric',
+        '-associate',   
+        '-metric', 
     )
 
 class Schedule(db.Model, SerializerMixin):
@@ -59,28 +60,29 @@ class Schedule(db.Model, SerializerMixin):
     id = db.Column(db.Integer, primary_key=True)
     associate_id = db.Column(db.Integer, db.ForeignKey('associates.id'))
     day_id = db.Column(db.Integer, db.ForeignKey('days.id'))
-    shift_start = db.Column(db.Time)
-    shift_end = db.Column(db.Time)
     
-    serialize_rules = (
-        '-associate.schedules',
-    )
+    day = db.relationship('Day', backref='schedules')
+    
+    serialize_rules = ('-associate.schedules',)
 
 class Department(db.Model, SerializerMixin):
     __tablename__ = 'departments'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     
+    associates = db.relationship('Associate', back_populates='department')
+    
     serialize_rules = (
-        '-associates.department',
+        '-associates', 
     )
-
+    
 class JobClass(db.Model, SerializerMixin):
     __tablename__ = 'jobclasses'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
-    DayOfWeek = db.Column(db.String(50))
     
+    associates = db.relationship('Associate', back_populates='jobclass')
+
     serialize_rules = (
-        '-associates.jobclass',
+        '-associates', 
     )

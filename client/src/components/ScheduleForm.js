@@ -18,7 +18,6 @@ function ScheduleForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting daily demand:', dailyDemand);
     await dispatch(fetchSchedule(dailyDemand));
   };
 

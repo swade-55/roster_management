@@ -3,7 +3,6 @@ import { configureStore } from '@reduxjs/toolkit';
 import workersReducer from '../features/workersSlice';
 import metricsReducer from '../features/metricsSlice'
 import scheduleReducer from '../features/scheduleSlice';
-import schedulesReducer from '../features/schedulesSlice';
 import allocationReducer from '../features/allocationSlice';
 
 const store = configureStore({
@@ -11,7 +10,6 @@ const store = configureStore({
     workers: workersReducer,
     metrics:metricsReducer,
     schedule: scheduleReducer,
-    schedules: schedulesReducer,
     allocation: allocationReducer
   },
 });
