@@ -1,81 +1,102 @@
-// ... other imports
+import React from 'react';
 import { useDispatch } from 'react-redux';
 import { fetchAllocation } from '../features/allocationSlice';
-import {useState} from 'react'
-import './App.css'
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import * as Yup from 'yup';
 
 const DepartmentForm = () => {
-  const [departmentData, setDepartmentData] = useState({ departments: {}, total_heads: 0 });
   const dispatch = useDispatch();
 
-  const handleDepartmentChange = (e, deptName) => {
-    const value = e.target.value;
-    const name = e.target.name;
+  // Define the validation schema using Yup
+  const validationSchema = Yup.object().shape({
+    departments: Yup.object().shape({
+      Perishable: Yup.object().shape({
+        total_cases: Yup.number().min(0, 'Must be greater than or equal to 0').required('Required'),
+        cases_per_hour: Yup.number().min(0, 'Must be greater than or equal to 0').required('Required'),
+      }),
+      Grocery: Yup.object().shape({
+        total_cases: Yup.number().min(0, 'Must be greater than or equal to 0').required('Required'),
+        cases_per_hour: Yup.number().min(0, 'Must be greater than or equal to 0').required('Required'),
+      }),
+      Frozen: Yup.object().shape({
+        total_cases: Yup.number().min(0, 'Must be greater than or equal to 0').required('Required'),
+        cases_per_hour: Yup.number().min(0, 'Must be greater than or equal to 0').required('Required'),
+      }),
+    }),
+    total_heads: Yup.number().min(0, 'Must be greater than or equal to 0').required('Required'),
+  });
 
-    setDepartmentData(prevState => ({
-      ...prevState,
-      departments: {
-        ...prevState.departments,
-        [deptName]: {
-          ...prevState.departments[deptName],
-          [name]: name === 'total_cases' ? parseInt(value, 10) : parseFloat(value)
-        }
-      }
-    }));
+  // Initial values for the form fields
+  const initialValues = {
+    departments: {
+      Perishable: { total_cases: '', cases_per_hour: '' },
+      Grocery: { total_cases: '', cases_per_hour: '' },
+      Frozen: { total_cases: '', cases_per_hour: '' },
+    },
+    total_heads: 0,
   };
 
-  const handleHeadsChange = (e) => {
-    setDepartmentData(prevState => ({
-      ...prevState,
-      total_heads: parseInt(e.target.value, 10)
-    }));
+  const handleSubmit = (values) => {
+    // Dispatch the fetchAllocation action with form values
+    dispatch(fetchAllocation(values));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const payload = {
-      departments: departmentData.departments, 
-      total_heads: departmentData.total_heads, 
-    };
-    dispatch(fetchAllocation(payload));
-    
-  };
-  
   return (
-    <form onSubmit={handleSubmit} className="streamlit-form">
-      {['Perishable', 'Grocery', 'Frozen'].map(deptName => (
-        <div key={deptName}>
-          <h2>{deptName}</h2>
-          <div>
-            <label>Total Cases for {deptName}:</label>
-            <input
+    <Formik
+      initialValues={initialValues}
+      validationSchema={validationSchema}
+      onSubmit={handleSubmit}
+    >
+      {({ errors, touched }) => (
+        <Form className="streamlit-form">
+          {Object.keys(initialValues.departments).map(deptName => (
+            <div key={deptName} className="mb-4">
+              <h2 className="text-xl font-semibold mb-2">{deptName}</h2>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Total Cases for {deptName}:</span>
+                </label>
+                <Field
+                  type="number"
+                  name={`departments.${deptName}.total_cases`}
+                  className={`input input-bordered input-primary w-full max-w-xs ${
+                    errors.departments?.[deptName]?.total_cases && touched.departments?.[deptName]?.total_cases ? 'input-error' : ''
+                  }`}
+                />
+                <ErrorMessage name={`departments.${deptName}.total_cases`} component="div" className="text-error" />
+              </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Cases Per Hour for {deptName}:</span>
+                </label>
+                <Field
+                  type="number"
+                  name={`departments.${deptName}.cases_per_hour`}
+                  className={`input input-bordered input-primary w-full max-w-xs ${
+                    errors.departments?.[deptName]?.cases_per_hour && touched.departments?.[deptName]?.cases_per_hour ? 'input-error' : ''
+                  }`}
+                />
+                <ErrorMessage name={`departments.${deptName}.cases_per_hour`} component="div" className="text-error" />
+              </div>
+            </div>
+          ))}
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text">Total Heads:</span>
+            </label>
+            <Field
               type="number"
-              name="total_cases"
-              value={departmentData.departments[deptName]?.total_cases || ''}
-              onChange={e => handleDepartmentChange(e, deptName)}
+              name="total_heads"
+              className={`input input-bordered input-primary w-full max-w-xs ${
+                errors.total_heads && touched.total_heads ? 'input-error' : ''
+              }`}
             />
+            <ErrorMessage name="total_heads" component="div" className="text-error" />
           </div>
-          <div>
-            <label>Cases Per Hour for {deptName}:</label>
-            <input
-              type="number"
-              name="cases_per_hour"
-              value={departmentData.departments[deptName]?.cases_per_hour || ''}
-              onChange={e => handleDepartmentChange(e, deptName)}
-            />
-          </div>
-        </div>
-      ))}
-      <div>
-        <label>Total Heads:</label>
-        <input
-          type="number"
-          value={departmentData.total_heads}
-          onChange={handleHeadsChange}
-        />
-      </div>
-      <button type="submit" className="streamlit-button">Calculate Allocation</button>
-    </form>
+          <button type="submit" className="btn btn-primary mt-4">Calculate Allocation</button>
+        </Form>
+      )}
+    </Formik>
   );
 };
 

@@ -1,6 +1,5 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import './App.css'
 
 const AllocationResults = () => {
   const allocation = useSelector(state => state.allocation.allocationData);
@@ -10,19 +9,19 @@ const AllocationResults = () => {
   };
 
   return (
-    <div className="streamlit-form">
+    <div>
       {allocation.status === 'Optimal' ? (
-        <div className="allocation-results">
+        <div className="bg-success text-base-100 p-4 rounded">
           <h2>Allocation Results:</h2>
           {Object.entries(allocation.allocation).map(([dept, heads]) => (
             <p key={dept}>
-              {dept}: {roundToTwo(heads)} heads allocated, 
-              completion in {roundToTwo(allocation.completion_times[dept])} hours
+              {dept}: {heads} heads allocated, 
+              completion in {allocation.completion_times[dept]} hours
             </p>
           ))}
         </div>
       ) : (
-        <div>No allocation data or allocation is suboptimal.</div>
+        <div className="bg-error text-base-100 p-4 rounded">No allocation data or allocation is suboptimal.</div>
       )}
     </div>
   );

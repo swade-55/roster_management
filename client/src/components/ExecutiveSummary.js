@@ -65,33 +65,36 @@ function ExecutiveSummary() {
   const formatNumber = (num) => Math.round(num * 100) / 100;
 
   return (
-    <div className="header-container">
-      <h1>Capacity Planner</h1>
+    <div className="p-5">
+      <h1 className="text-3xl font-bold mb-5">Capacity Planner</h1>
 
-      <h2>Averages by Department and Job Class</h2>
+      <h2 className="text-2xl font-semibold mb-4">Averages by Department and Job Class</h2>
       {averagesData.map(({ department, jobClasses }) => (
-        <div key={department}>
-          <h3>{department}</h3>
-          <table className="ui celled table">
-            <thead>
-              <tr>
-                <th>Job Class</th>
-                <th>Average Uptime (%)</th>
-                <th>Average Attendance (%)</th>
-                <th>Specific Metric (CPH/PPH)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {jobClasses.map(({ jobClassName, averageUptime, averageAttendance, specificMetric, jobClassId }) => ( // Ensure jobClassId is included here
-                <tr key={jobClassName}>
-                  <td>{jobClassName}</td>
-                  <td>{formatNumber(averageUptime)}%</td>
-                  <td>{formatNumber(averageAttendance)}%</td>
-                  <td>{formatNumber(specificMetric)} {(jobClassId === 2 || jobClassId === 4)? "CPH" : "PPH"}</td> {/* Now correctly references jobClassId */}
+        <div key={department} className="mb-5">
+          <h3 className="text-xl font-semibold mb-3">{department}</h3>
+          {/* DaisyUI Table */}
+          <div className="overflow-x-auto">
+            <table className="table w-full">
+              <thead>
+                <tr>
+                  <th>Job Class</th>
+                  <th>Average Uptime (%)</th>
+                  <th>Average Attendance (%)</th>
+                  <th>Specific Metric (CPH/PPH)</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {jobClasses.map(({ jobClassName, averageUptime, averageAttendance, specificMetric, jobClassId }) => (
+                  <tr key={jobClassName}>
+                    <td>{jobClassName}</td>
+                    <td>{formatNumber(averageUptime)}%</td>
+                    <td>{formatNumber(averageAttendance)}%</td>
+                    <td>{formatNumber(specificMetric)} {(jobClassId === 2 || jobClassId === 4) ? "CPH" : "PPH"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       ))}
     </div>

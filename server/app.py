@@ -25,29 +25,16 @@ def get_associates_details():
     associates_output = []
 
     for associate in associates:
-        # Use to_dict() to serialize the associate and related entities
         associate_data = associate.to_dict()
-        
-        # Initialize an empty dictionary for schedules
-        schedules_list = []
-        # Populate the schedules_dict with schedule details
-        for schedule in associate.schedules:
-            schedules_list.append(schedule.day.title)
-        
-        # Add the schedules_dict under a 'schedules' key
+
+        # Simplify schedules to a list of day titles
+        schedules_list = [schedule.day.title for schedule in associate.schedules]
         associate_data['schedules'] = schedules_list
-        
 
-        # Initialize an empty dictionary for metrics
-        metrics_dict = {}
-        # Populate the metrics_dict with metric details
-        for metric in associate.metrics:
-            if metric.metric:  # Assuming a 'metric' relationship exists in AssociateMetric
-                metrics_dict[metric.metric.metricname] = metric.metric_value
-
-        # Add the metrics_dict under a 'metrics' key
+        # Convert metrics to a dictionary with metric names as keys
+        metrics_dict = {metric.metric.metricname: metric.metric_value for metric in associate.metrics}
         associate_data['metrics'] = metrics_dict
-        
+
         associates_output.append(associate_data)
 
     return jsonify(associates_output)
@@ -60,69 +47,80 @@ def add_associate():
 
         # Handling Job Class
         job_class_id = data.get('jobClass_id')
-        if job_class_id is not None:
-            job_class_id = int(job_class_id)
+        job_class = None
+        if job_class_id:
             job_class = JobClass.query.get(job_class_id)
             if not job_class:
-                app.logger.error(f'Job class with id {job_class_id} not found')
-                return jsonify({'error': f'Job class with id {job_class_id} not found'}), 404
+                return jsonify({'error': 'Job class not found'}), 404
         else:
             return jsonify({'error': 'Job class ID is required'}), 400
 
         # Handling Department
         department_name = data.get('department')
-        if department_name:
-            department = Department.query.filter_by(name=department_name).first()
-            if not department:
-                app.logger.error(f'Department not found: {department_name}')
-                return jsonify({'error': f'Department not found: {department_name}'}), 404
-            department_id = department.id
-        else:
-            return jsonify({'error': 'Department name is required'}), 400
+        department = Department.query.filter_by(name=department_name).first()
+        if not department:
+            return jsonify({'error': 'Department not found'}), 404
 
         # Handling Hire Date
         hire_date_str = data.get('hireDate')
-        if hire_date_str:
-            hire_date = datetime.strptime(hire_date_str, "%Y-%m-%d").date()
-        else:
-            return jsonify({'error': 'Hire date is required'}), 400
+        hire_date = datetime.strptime(hire_date_str, "%Y-%m-%d").date() if hire_date_str else None
+        if not hire_date:
+            return jsonify({'error': 'Invalid or missing hire date'}), 400
 
         # Creating or updating the Associate
         associate = Associate(
             first_name=data.get('firstName'),
             last_name=data.get('lastName'),
-            jobclass_id=job_class_id,
-            department_id=department_id,
+            jobclass=job_class,
+            department=department,
             dateofhire=hire_date
         )
         db.session.add(associate)
-        db.session.flush()
+        db.session.commit()
 
-        # Process and save metrics
+        # Constructing metrics dictionary
+        metrics_dict = {}
         for metric_data in data.get('metrics', []):
             metric_name = metric_data.get('name')
-            metric_value = metric_data.get('value')
-
-            if metric_value is not None:
-                metric = Metric.query.filter_by(metricname=metric_name).first()
-                if not metric:
-                    app.logger.error(f'Metric name not found: {metric_name}')
-                    continue
-
-                associate_metric = AssociateMetric(
-                    associate_id=associate.id,
-                    metric_id=metric.id,
-                    metric_value=metric_value
-                )
+            metric = Metric.query.filter_by(metricname=metric_name).first()
+            if metric:
+                metrics_dict[metric.metricname] = metric_data.get('value')
+                associate_metric = AssociateMetric(associate_id=associate.id, metric_id=metric.id, metric_value=metric_data.get('value'))
                 db.session.add(associate_metric)
-
+        
         db.session.commit()
-        return jsonify({'message': 'Associate added/updated successfully', 'associate_id': associate.id}), 200
+
+        # Fetching department and job class again to ensure they are refreshed
+        department = Department.query.get(associate.department_id)
+        job_class = JobClass.query.get(associate.jobclass_id)
+
+        response_data = {
+            "dateofhire": associate.dateofhire.strftime("%Y-%m-%d"),
+            "department": {
+                "id": department.id,
+                "name": department.name
+            },
+            "department_id": department.id,
+            "first_name": associate.first_name,
+            "id": associate.id,
+            "jobclass": {
+                "id": job_class.id,
+                "name": job_class.name
+            },
+            "jobclass_id": job_class.id,
+            "last_name": associate.last_name,
+            "metrics": metrics_dict,
+            "schedules": []  # Assuming schedules need to be fetched or defined
+        }
+
+        return jsonify(response_data), 200
 
     except Exception as e:
         db.session.rollback()
-        app.logger.error(f'Error adding/updating associate: {e}')
-        return jsonify({'error': str(e)}), 500
+        app.logger.error(f'Error processing request: {e}')
+        return jsonify({'error': 'Server error'}), 500
+    
+
 
 @app.route('/update_associate_schedule', methods=['PATCH'])
 def update_associate_schedule():
@@ -131,7 +129,7 @@ def update_associate_schedule():
     new_schedule_days = set(data.get('schedules', []))
 
     # Fetch the associate
-    associate = Associate.query.filter_by(id=worker_id).first()
+    associate = Associate.query.get(worker_id)
     if not associate:
         return jsonify({'error': 'Associate not found'}), 404
 
@@ -151,70 +149,92 @@ def update_associate_schedule():
 
     # Add new schedules
     for day_id in new_schedule_day_ids - existing_schedule_day_ids:
-        new_schedule = Schedule(associate_id=worker_id, day_id=day_id)  # Remove shift_start and shift_end
+        new_schedule = Schedule(associate_id=worker_id, day_id=day_id)
         db.session.add(new_schedule)
 
     try:
         db.session.commit()
-        return jsonify(new_schedule.to_dict()), 200
+        
+        # Construct the detailed response
+        updated_associate = Associate.query.get(worker_id)
+        response_data = {
+        "dateofhire": associate.dateofhire.strftime("%Y-%m-%d"),
+        "department": {
+            "id": associate.department.id,
+            "name": associate.department.name
+        },
+        "department_id": associate.department_id,
+        "first_name": associate.first_name,
+        "id": associate.id,
+        "jobclass": {
+            "id": associate.jobclass.id,
+            "name": associate.jobclass.name
+        },
+        "jobclass_id": associate.jobclass_id,
+        "last_name": associate.last_name,
+        "metrics": {metric.metric.metricname: metric.metric_value for metric in associate.metrics},
+        "schedules": [schedule.day.title for schedule in associate.schedules]
+    }
+        return jsonify(response_data), 200
+
     except Exception as e:
-        breakpoint()
         db.session.rollback()
-    
         return jsonify({'error': 'Could not update the schedule', 'details': str(e)}), 500
 
     
-@app.route('/update_associate', methods=['PATCH'])
-def update_associate():
+
+@app.route('/update_associate/<int:associate_id>', methods=['PATCH'])
+def update_associate(associate_id):
     data = request.get_json()
-    associate_id = data['associateId']
 
     try:
+        # Retrieve the associate to be updated
         associate = Associate.query.get(associate_id)
         if not associate:
             return jsonify({'error': 'Associate not found'}), 404
 
-        associate.first_name = data.get('firstName', associate.first_name)
-        associate.last_name = data.get('lastName', associate.last_name)
+        # Update basic associate details if provided
+        if 'firstName' in data:
+            associate.first_name = data['firstName']
+        if 'lastName' in data:
+            associate.last_name = data['lastName']
 
-        dateofhire_str = data.get('dateofhire')
-        if dateofhire_str:
-            print("Converting dateofhire from string to date object")
-            associate.dateofhire = datetime.strptime(dateofhire_str, '%Y-%m-%d').date()
+        # Example for updating metrics (detailed logic for updating or handling metrics goes here)
+        if 'metrics' in data:
+            for metric_update in data['metrics']:
+                metric_id = metric_update.get('metric_id')
+                new_value = metric_update.get('value')
 
-        associate.department_id = data.get('departmentId', associate.department_id)
-        associate.jobclass_id = data.get('jobclassId', associate.jobclass_id)
+                associate_metric = AssociateMetric.query.filter_by(associate_id=associate_id, metric_id=metric_id).first()
+                if associate_metric:
+                    associate_metric.metric_value = new_value
+                else:
+                    # Logic for handling non-existent metric updates
+                    print(f'Metric with ID {metric_id} not found for associate {associate_id}, skipping.')
 
-        updated_metrics = data.get('metrics', [])
-        print("Updating metrics for associate ID:", associate_id)
-        for metric_data in updated_metrics:
-            metric_id = metric_data.get('metric_id')
-            metric_value = metric_data.get('value')
-            print(f"Updating metric ID {metric_id} with value {metric_value}")
-
-            associate_metric = AssociateMetric.query.filter_by(
-                id=metric_id
-            ).first()
-            if associate_metric:
-                associate_metric.metric_value = metric_value
-                print(f"Updated metric ID {metric_id}")
-            else:
-                print(f"No existing metric found for ID: {metric_id}, skipping update")
-
-        updated_metrics_data = [
-            {'id': metric.id, 'value': metric.metric_value}
-            for metric in associate.metrics
-        ]
-
+        # Commit changes to the database
         db.session.commit()
-        return jsonify({'message': 'Associate updated successfully', 'metrics': updated_metrics_data}), 200
+
+        # Serialize the associate using to_dict(), excluding backrefs to avoid circular references
+        associate_data = associate.to_dict(rules=[
+            '-metrics.associate',  # Exclude backrefs from metrics
+            '-schedules.associate',  # Exclude backrefs from schedules
+        ])
+
+        # Manually adjust metrics and schedules in the serialized data
+        metrics_dict = {metric.metric.metricname: metric.metric_value for metric in associate.metrics}
+        schedules_list = [schedule.day.title for schedule in associate.schedules]
+
+        # Update the serialized data with custom formats for metrics and schedules
+        associate_data['metrics'] = metrics_dict
+        associate_data['schedules'] = schedules_list
+
+        # Return the custom serialized data as JSON
+        return jsonify(associate_data), 200
 
     except Exception as e:
-        print("Exception occurred:", e)
-        db.session.rollback()
-        app.logger.error(f'Exception updating associate: {e}')
-        return jsonify({'error': 'Internal Server Error', 'message': str(e)}), 500
-    
+        # Handle any exceptions that occur during the process
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/allocate_heads', methods=['POST'])
 def allocate_heads():

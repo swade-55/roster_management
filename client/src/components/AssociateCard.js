@@ -6,29 +6,6 @@ import * as Yup from 'yup';
 
 function AssociateCard({ worker }) {
 
-  const cardStyle = {
-    position: 'relative', // Use relative for z-index to work
-    marginBottom: '20px', // Add some space between the cards
-    paddingBottom: '70px', // Increase padding at the bottom to ensure space for buttons
-    border: '1px solid #ccc', // Add border for visual separation (optional)
-    borderRadius: '4px', // Border radius to match the UI style (optional)
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', // Box shadow for a subtle depth effect (optional)
-    backgroundColor: '#fff', // White background for the card
-  };
-
-  // Style for the metrics container to prevent overlap
-  const metricsContainerStyle = {
-    overflow: 'hidden', // Prevent content from spilling out
-    paddingBottom: '10px', // Add some padding at the bottom for a cleaner look
-  };
-
-  // Existing buttonContainerStyle remains the same
-  const buttonContainerStyle = {
-    position: 'absolute', // Position buttons at the bottom of the card
-    bottom: '10px', // Spacing from the bottom
-    left: '10px', // Spacing from the left
-    zIndex: 2, // Ensure it's above other content
-  };
 
 
   const metricNameToId = {
@@ -62,7 +39,7 @@ function AssociateCard({ worker }) {
       firstName: worker.first_name,
       lastName: worker.last_name,
       metrics: Object.entries(worker.metrics).map(([key, value]) => ({
-        id: metricNameToId[key], // The mapping is correct here
+        id: metricNameToId[key], 
         value: value
       })),
     },
@@ -73,7 +50,7 @@ function AssociateCard({ worker }) {
         firstName: values.firstName,
         lastName: values.lastName,
         metrics: values.metrics.map(metric => {
-          const metricID = metricNameToId[metric.id] || metric.id; // Fallback to metric.id in case mapping fails
+          const metricID = metricNameToId[metric.id] || metric.id; 
           return {
             metric_id: metricID,
             value: metric.value
@@ -99,16 +76,17 @@ function AssociateCard({ worker }) {
   }
 
 
-
   return (
-    <div className="ui card" style={cardStyle}>
+    <div className="card bg-base-100 shadow-xl">
   {editMode ? (
-    // Form view for editing
-    <form onSubmit={formik.handleSubmit} className="ui form">
-      <div className="field">
-        <label>First Name</label>
+    <form onSubmit={formik.handleSubmit} className="card-body">
+      <div className="form-control">
+        <label className="label">
+        <span className="label-text">First Name</span>
+        </label>
         <input
           type="text"
+          className="input input-bordered"
           {...formik.getFieldProps('firstName')}
         />
         {/* Error Message */}
@@ -132,21 +110,18 @@ function AssociateCard({ worker }) {
           {/* Error Message for Each Metric */}
         </div>
       ))}
-          <div style={buttonContainerStyle}>
-            <button type="submit" className="ui button primary">Save</button>
-            <button
-              type="button" // Changed from submit to button
-              onClick={handleWorkerDelete} // Added onClick event handler
-              className="ui button red">Delete</button>
-            <button type="button" onClick={() => setEditMode(false)} className="ui button">Cancel</button>
-      </div>
+          <div className="card-actions justify-end">
+            <button type="submit" className="btn btn-primary">Save</button>
+            <button type="button" onClick={() => handleWorkerDelete(worker.id)} className="btn btn-error">Delete</button>
+            <button type="button" onClick={() => setEditMode(false)} className="btn btn-secondary">Cancel</button>
+          </div>
     </form>
   ) : (
     // View mode displaying associate information
     <>
       <div className="header">{worker.first_name} {worker.last_name}</div>
       <div className="meta">{worker.job_class}</div>
-      <div className="description" style={metricsContainerStyle}>
+      <div className="description">
         <h4 className="ui sub header">Metrics</h4>
         <div className="ui small feed">
           {Object.entries(worker.metrics).map(([key, value], index) => (
@@ -160,7 +135,7 @@ function AssociateCard({ worker }) {
           ))}
         </div>
       </div>
-      <div style={buttonContainerStyle}>
+      <div >
       <button onClick={() => setEditMode(true)} className="ui button">Edit</button>
       </div>
     </>

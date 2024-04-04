@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import './AssociatesTable.css'; // Ensure you have this CSS for basic styling
-// Import your updateAssociate action from your slice
 import { updateAssociateSchedule } from '../features/workersSlice';
 
 const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -26,7 +24,8 @@ const AssociatesTable = () => {
 
   return (
     <div>
-      <table>
+      <div className="overflow-x-auto">
+      <table className="table w-full">
         <thead>
           <tr>
             <th>Name</th>
@@ -50,6 +49,7 @@ const AssociatesTable = () => {
           ))}
         </tbody>
       </table>
+      </div>
       {showModal && (
         <ScheduleModal
           isOpen={showModal}
@@ -82,22 +82,28 @@ const ScheduleModal = ({ isOpen, onClose, onSave, initialDays = [], workerId }) 
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Edit Schedule</h2>
-        {daysOfWeek.map(day => (
-          <div key={day}>
-            <label>
-              <input
-                type="checkbox"
-                checked={selectedDays.includes(day)}
-                onChange={() => handleDayChange(day)}
-              /> {day}
-            </label>
-          </div>
-        ))}
-        <button onClick={handleSave}>Save</button>
-        <button onClick={onClose}>Cancel</button>
+    <div className="modal modal-open">
+      <div className="modal-box">
+        <h2 className="font-bold text-lg">Edit Schedule</h2>
+        <form>
+          {daysOfWeek.map(day => (
+            <div key={day} className="form-control">
+              <label className="label cursor-pointer">
+                <span className="label-text">{day}</span>
+                <input
+                  type="checkbox"
+                  className="checkbox checkbox-primary"
+                  checked={selectedDays.includes(day)}
+                  onChange={() => handleDayChange(day)}
+                />
+              </label>
+            </div>
+          ))}
+        </form>
+        <div className="modal-action">
+          <button className="btn btn-primary" onClick={handleSave}>Save</button>
+          <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+        </div>
       </div>
     </div>
   );

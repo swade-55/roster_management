@@ -62,7 +62,7 @@ export const updateAssociate = createAsyncThunk(
     
     try {
       
-      const response = await fetch(`/update_associate`, {
+      const response = await fetch(`/update_associate/${associateData.associateId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -118,7 +118,8 @@ const workersSlice = createSlice({
     builder
       .addCase(addWorker.fulfilled, (state, action) => {
         state.status='succeeded';
-        state.workers = [...state.workers, action.payload];
+        // state.workers = [...state.workers, action.payload];
+        state.workers.push(action.payload)
         
       })
       .addCase(addWorker.rejected, (state, action) => {
@@ -139,8 +140,7 @@ const workersSlice = createSlice({
         console.error('Failed to update worker:', action.payload);
       })
       .addCase(updateAssociate.fulfilled, (state, action) => {
-        
-        const index = state.workers.findIndex(worker => worker.id === action.payload.associateId);
+        const index = state.workers.findIndex(worker => worker.id === action.payload.id);
         if (index !== -1) {
           state.workers[index] = action.payload;
         } else {
@@ -152,9 +152,7 @@ const workersSlice = createSlice({
       })
       .addCase(updateAssociateSchedule.fulfilled, (state, action) => {
         console.log(state.workers)
-        debugger
-        const index = state.workers.findIndex(worker => worker.id === action.payload.associateId);
-
+        const index = state.workers.findIndex(worker => worker.id === action.payload.id);
         if (index !== -1) {
           state.workers[index] = action.payload;
         } else {

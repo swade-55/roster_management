@@ -31,19 +31,12 @@ function AssociateForm() {
   });
 
 
-  const handleJobClassChange = (setFieldValue, value) => {
-    console.log('Selected Job Class:', value); // Debug log
-    setFieldValue("jobClass_id", value);
-    setSelectedJobClass(value);
-  }
 
   const workers = useSelector(state => state.workers.workers);
   const uniqueDepartments = [...new Set(workers.filter(worker => worker.department).map(worker => worker.department.name))];
-  console.log('unique departments', uniqueDepartments);
-  // const uniqueJobClasses = [...new Set(workers.filter(worker => worker.jobclass).map(worker => worker.jobclass.name))];
   const uniqueJobClasses = workers
-  .map(worker => worker.jobclass) // Get all jobclass objects
-  .filter(jobclass => jobclass !== null && jobclass !== undefined) // Filter out null/undefined jobclass
+  .map(worker => worker.jobclass) 
+  .filter(jobclass => jobclass !== null && jobclass !== undefined) 
   .reduce((acc, jobclass) => {
     // Check if the jobclass id is already in the accumulator
     const exists = acc.some(item => item.id === jobclass.id);
@@ -106,28 +99,19 @@ function AssociateForm() {
 
 
     dispatch(addWorker(payload))
-      .unwrap()
-      .then(addedWorker => {
-        console.log('Form submission successful, added worker:', addedWorker);
-        resetForm();
-      })
-      .catch(error => {
-        console.error('Form submission error:', error);
-      })
-      .finally(() => {
-        setSubmitting(false);
-      });
   };
 
 
   return (
-    <div>
-      <h3>Add an Associate!</h3>
+    <div className="p-4 bg-base-100">
+      <h3 className="text-lg font-semibold">Add an Associate!</h3>
       <Formik initialValues={initialValues} validationSchema={validationSchema} onSubmit={onSubmit}>
         {({ isSubmitting, setFieldValue }) => (
-          <Form>
-            <label htmlFor="jobClass_id">Job Class</label>
-            <Field as="select" name="jobClass_id" onChange={e => {
+          <Form className="form-control w-full max-w-xs">
+            <label className="label" htmlFor="jobClass_id">
+            <span className="label-text">Job Class</span>
+            </label>
+            <Field as="select" name="jobClass_id" className="select select-bordered w-full max-w-xs" onChange={e => {
               const value = e.target.value;
               setFieldValue("jobClass_id", value);
               setSelectedJobClass(value);
@@ -137,52 +121,52 @@ function AssociateForm() {
                 <option key={jobClass.id} value={jobClass.id}>{jobClass.name}</option>
               ))}
             </Field>
-            <ErrorMessage name="jobClass_id" component="div" className="error" />
+            <ErrorMessage name="jobClass_id" component="div" className="text-error" />
 
             {/* Always visible fields */}
-            <Field name="firstName" placeholder="First Name" />
-            <ErrorMessage name="firstName" component="div" className="error" />
+            <Field name="firstName" placeholder="First Name" className="select select-bordered w-full max-w-xs"/>
+            <ErrorMessage name="firstName" component="div" className="text-error" />
 
-            <Field name="lastName" placeholder="Last Name" />
-            <ErrorMessage name="lastName" component="div" className="error" />
+            <Field name="lastName" placeholder="Last Name" className="select select-bordered w-full max-w-xs"/>
+            <ErrorMessage name="lastName" component="div" className="text-error" />
 
             {/* Conditional Fields based on jobClass_id */}
             {selectedJobClass && (
               <>
-                <Field name="uptime" placeholder="Uptime" />
-                <ErrorMessage name="uptime" component="div" className="error" />
+                <Field name="uptime" placeholder="Uptime" className="select select-bordered w-full max-w-xs"/>
+                <ErrorMessage name="uptime" component="div" className="text-error" />
 
-                <Field name="attendance" placeholder="Attendance" />
-                <ErrorMessage name="attendance" component="div" className="error" />
+                <Field name="attendance" placeholder="Attendance" className="select select-bordered w-full max-w-xs"/>
+                <ErrorMessage name="attendance" component="div" className="text-error" />
 
                 {selectedJobClass === '2' && (
                   <>
-                    <Field name="casesPerHour" placeholder="Cases Per Hour" />
-                    <ErrorMessage name="casesPerHour" component="div" className="error" />
+                    <Field name="casesPerHour" placeholder="Cases Per Hour" className="select select-bordered w-full max-w-xs"/>
+                    <ErrorMessage name="casesPerHour" component="div" className="text-error" />
                   </>
                 )}
 
                 {['1', '3', '4', '5'].includes(selectedJobClass) && (
                   <>
-                    <Field name="palletsPerHour" placeholder="Pallets Per Hour" />
-                    <ErrorMessage name="palletsPerHour" component="div" className="error" />
+                    <Field name="palletsPerHour" placeholder="Pallets Per Hour" className="select select-bordered w-full max-w-xs"/>
+                    <ErrorMessage name="palletsPerHour" component="div" className="text-error" />
                   </>
                 )}
 
-                <Field as="select" name="department">
+                <Field as="select" name="department" className="select select-bordered w-full max-w-xs">
                   <option value="">Select a Department</option>
                   {uniqueDepartments.map((department, index) => (
                     <option key={index} value={department}>{department}</option>
                   ))}
                 </Field>
-                <ErrorMessage name="department" component="div" className="error" />
+                <ErrorMessage name="department" component="div" className="text-error" />
 
-                <Field name="hireDate" type="date" />
-                <ErrorMessage name="hireDate" component="div" className="error" />
+                <Field name="hireDate" type="date" className="select select-bordered w-full max-w-xs" />
+                <ErrorMessage name="hireDate" component="div" className="text-error" />
               </>
             )}
 
-            <button type="submit" disabled={isSubmitting}>Submit</button>
+            <button className="btn btn-primary mt-4" type="submit" disabled={isSubmitting}>Submit</button>
           </Form>
         )}
       </Formik>
